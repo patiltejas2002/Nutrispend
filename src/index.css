@@ -1,0 +1,61 @@
+/* Global responsive styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Mobile-first responsive adjustments */
+@media (max-width: 768px) {
+  /* Reduce padding for mobile */
+  .mobile-padding {
+    padding: 16px 12px !important;
+  }
+
+  /* Make tables scrollable on mobile */
+  .table-container {
+    overflow-x: auto;
+  }
+
+  /* Adjust button sizes */
+  .mobile-button {
+    font-size: 14px !important;
+    padding: 8px 16px !important;
+  }
+
+  /* Stack flex items on mobile */
+  .mobile-flex {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  /* Adjust heading sizes */
+  .mobile-heading {
+    font-size: 18px !important;
+  }
+
+  /* Modal adjustments */
+  .mobile-modal {
+    width: 95% !important;
+    padding: 16px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small screens */
+  .mobile-padding {
+    padding: 12px 8px !important;
+  }
+
+  .mobile-button {
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+  }
+}
