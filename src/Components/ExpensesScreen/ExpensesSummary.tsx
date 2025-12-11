@@ -51,8 +51,8 @@ const loadFromStorage = (): ExpenseItem[] => {
 };
 
 const COLORS = {
-  Tejas: "#4A90E2", // Blue
-  Nikita: "#FC4986", // Pink
+  Tejas: "#4A90E2",
+  Nikita: "#FC4986", 
 };
 
 const ExpensesSummary: React.FC = () => {
