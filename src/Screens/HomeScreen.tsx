@@ -10,7 +10,7 @@ import {
   Separator,
 } from "@radix-ui/themes";
 import { useNavigate } from "react-router-dom";
-import { Flame, WalletCards, Moon, Sun } from "lucide-react";
+import { Flame, WalletCards } from "lucide-react";
 
 // Swiper
 import "swiper/css";
@@ -48,19 +48,15 @@ const HomeScreen: React.FC = () => {
     (s, i) => s + i.calories,
     0
   );
-  const [dark, setDark] = React.useState(false);
 
-  const bg = dark
-    ? "#020617"
-    : "radial-gradient(circle at top left,#e6f9f4,#f7efff 40%,#edf7ff 100%)";
+  const bg = "radial-gradient(circle at top left,#e6f9f4,#f7efff 40%,#edf7ff 100%)";
 
   return (
     <Box
       style={{
         minHeight: "100vh",
         background: bg,
-        color: dark ? "#f9fafb" : "#020617",
-        transition: "background 0.25s ease, color 0.25s ease",
+        color: "#020617",
       }}
     >
       {/* NAVBAR */}
@@ -70,9 +66,8 @@ const HomeScreen: React.FC = () => {
         px="5"
         py="3"
         style={{
-          background: dark ? "#020617" : "#ffffff",
+          background: "#ffffff",
           borderBottom: "1px solid rgba(148,163,184,0.35)",
-          boxShadow: "0 4px 14px rgba(15,23,42,0.09)",
           position: "sticky",
           top: 0,
           zIndex: 50,
@@ -94,20 +89,20 @@ const HomeScreen: React.FC = () => {
             <Text
               size="4"
               weight="bold"
-              style={{ color: dark ? "#e5e7eb" : "#111827" }}
+              style={{ color: "#111827" }}
             >
               NutriSpend
             </Text>
             <Text
               size="1"
-              style={{ color: dark ? "#9ca3af" : "#6b7280" }}
+              style={{ color: "#6b7280" }}
             >
-              Track Calories & Expenses
+              Start Tracking Your Calories
             </Text>
           </Box>
         </Flex>
 
-        {/* Right: Buttons + Theme toggle */}
+        {/* Right: Buttons */}
         <Flex align="center" gap="8px">
           <Button
             size="2"
@@ -136,23 +131,6 @@ const HomeScreen: React.FC = () => {
           >
             Expenses
           </Button>
-
-          <Button
-            size="1"
-            variant="soft"
-            onClick={() => setDark((v) => !v)}
-            style={{
-              borderRadius: "999px",
-              width: 34,
-              height: 34,
-              padding: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {dark ? <Sun size={16} /> : <Moon size={16} />}
-          </Button>
         </Flex>
       </Flex>
 
@@ -176,9 +154,6 @@ const HomeScreen: React.FC = () => {
               height: 260,
               borderRadius: 20,
               overflow: "hidden",
-              boxShadow: dark
-                ? "0 12px 32px rgba(15,23,42,0.6)"
-                : "0 12px 32px rgba(15,23,42,0.14)",
             }}
           >
             {[Banner1, Banner2, Banner3].map((img, i) => (
@@ -243,7 +218,7 @@ const HomeScreen: React.FC = () => {
         <Heading
           size="4"
           mb="3"
-          style={{ color: dark ? "#e5e7eb" : "#111827" }}
+          style={{ color: "#111827" }}
         >
           🍽️ Daily Calorie Breakdown
         </Heading>
@@ -252,8 +227,7 @@ const HomeScreen: React.FC = () => {
           style={{
             borderRadius: 20,
             padding: 20,
-            background: dark ? "#020617" : "#ffffff",
-            boxShadow: "0 6px 16px rgba(15,23,42,0.12)",
+            background: "#ffffff",
           }}
         >
           {CALORIE_BREAKDOWN.map((i) => (
@@ -261,7 +235,7 @@ const HomeScreen: React.FC = () => {
               <Flex justify="between" mb="1">
                 <Text
                   weight="bold"
-                  style={{ color: dark ? "#e5e7eb" : "#1f2933" }}
+                  style={{ color: "#1f2933" }}
                 >
                   {i.label}
                 </Text>
@@ -272,7 +246,7 @@ const HomeScreen: React.FC = () => {
                   height: 11,
                   width: "100%",
                   borderRadius: 999,
-                  background: dark ? "#111827" : "#e5e7eb",
+                  background: "#e5e7eb",
                   overflow: "hidden",
                 }}
               >
@@ -294,7 +268,7 @@ const HomeScreen: React.FC = () => {
         <Heading
           size="4"
           mb="3"
-          style={{ color: dark ? "#e5e7eb" : "#111827" }}
+          style={{ color: "#111827" }}
         >
           🍔 Food Calories (per 100g)
         </Heading>
@@ -310,23 +284,13 @@ const HomeScreen: React.FC = () => {
                 padding: "18px 12px",
                 borderRadius: 18,
                 textAlign: "center",
-                background: dark ? "#020617" : "#ffffff",
-                boxShadow: dark
-                  ? "0 6px 14px rgba(15,23,42,0.6)"
-                  : "0 6px 14px rgba(15,23,42,0.08)",
-                transition: "transform 0.15s ease",
+                background: "#ffffff",
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.transform = "translateY(-2px)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.transform = "translateY(0px)")
-              }
             >
               <Text size="7">{i.emoji}</Text>
               <Text
                 weight="bold"
-                style={{ marginTop: 8, color: dark ? "#e5e7eb" : "#111827" }}
+                style={{ marginTop: 8, color: "#111827" }}
               >
                 {i.name}
               </Text>
@@ -341,7 +305,7 @@ const HomeScreen: React.FC = () => {
             marginTop: 28,
             padding: 18,
             borderRadius: 18,
-            background: dark ? "#022c22" : "#dcfce7",
+            background: "#dcfce7",
             textAlign: "center",
             fontWeight: 500,
           }}
