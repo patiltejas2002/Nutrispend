@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -128,7 +129,7 @@ const CaloriesScreen: React.FC = () => {
               transition: "0.3s",
             }}
           >
-             Add Meal
+            Add Meal
           </Button>
         </Flex>
 
@@ -195,19 +196,19 @@ const CaloriesScreen: React.FC = () => {
         </Flex>
 
         {/* Table */}
-        <Card className="table-container" style={{ padding: 0, borderRadius: 16, overflow: "hidden" }}>
+        <Card style={{ padding: 0, borderRadius: 16, overflow: "hidden" }}>
           <Table.Root>
             <Table.Header>
               <Table.Row style={{ background: "#fafafa" }}>
                 <Table.ColumnHeaderCell>Meal</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Food</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell align="center">
-                  Qty
-                </Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell align="center">Qty</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell align="center">
                   Calories
                 </Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell align="right">Action</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell align="right">
+                  Action
+                </Table.ColumnHeaderCell>
               </Table.Row>
             </Table.Header>
 
@@ -248,8 +249,8 @@ const CaloriesScreen: React.FC = () => {
           </Table.Root>
         </Card>
 
-        {/* Total + Status Message */}
-        <Flex direction="column" justify="end" mt="20px" gap="10px">
+        {/* Total + Message */}
+        <Flex direction="column" align="end" mt="20px" gap="10px">
           <Box
             style={{
               padding: "6px 18px",
@@ -296,7 +297,6 @@ const CaloriesScreen: React.FC = () => {
           }}
         >
           <Box
-            className="mobile-modal"
             style={{
               background: "white",
               borderRadius: 20,
@@ -329,9 +329,7 @@ const CaloriesScreen: React.FC = () => {
             </Box>
 
             <Flex justify="center" mt="3">
-              <Button variant="solid" onClick={() => setChartOpen(false)}>
-                Close
-              </Button>
+              <Button onClick={() => setChartOpen(false)}>Close</Button>
             </Flex>
           </Box>
         </Box>

@@ -24,7 +24,7 @@ type ExpenseItem = {
   desc?: string;
   user: User;
   type: TabType;
-  date: string; // YYYY-MM-DD
+  date: string;
   paid: boolean;
 };
 
@@ -268,7 +268,7 @@ const ExpensesScreen: React.FC = () => {
         </Card>
 
         {/* Total */}
-        <Flex justify="flex-end" mt="14px">
+        <Flex justify="end" mt="14px">
           <Box
             style={{
               padding: "6px 18px",
