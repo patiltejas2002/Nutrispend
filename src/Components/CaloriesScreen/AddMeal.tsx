@@ -39,7 +39,7 @@ const AddMeal: React.FC = () => {
     ? foodOptions.filter((f) => f.toLowerCase().includes(search.toLowerCase()))
     : [];
 
-  const calories = food && quantity ? FoodData[food] * Number(quantity) : 0;
+  const calories = food && quantity ? (FoodData as any)[food] * Number(quantity) : 0;
 
   const handleSelectFood = (f: string) => {
     setFood(f);
@@ -217,13 +217,13 @@ const AddMeal: React.FC = () => {
               transition: "0.15s",
             }}
           >
-            {f} — {FoodData[f]} cal
+            {f} — {(FoodData as any)[f]} cal
           </Box>
         ))}
       </Box>
 
       {/* Bottom actions */}
-      <Flex justify="space-between" mb="14px" align="center">
+      <Flex justify="between" mb="14px" align="center">
         <input
           type="number"
           value={quantity}

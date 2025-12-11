@@ -249,7 +249,7 @@ const CaloriesScreen: React.FC = () => {
         </Card>
 
         {/* Total + Status Message */}
-        <Flex direction="column" justify="flex-end" mt="20px" gap="10px">
+        <Flex direction="column" justify="end" mt="20px" gap="10px">
           <Box
             style={{
               padding: "6px 18px",
