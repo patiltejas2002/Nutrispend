@@ -12,7 +12,7 @@ import {
   Card,
 } from "@radix-ui/themes";
 
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, Edit } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -234,13 +234,22 @@ const CaloriesScreen: React.FC = () => {
                     <Table.Cell align="center">{m.quantity}</Table.Cell>
                     <Table.Cell align="center">🔥 {m.calories}</Table.Cell>
                     <Table.Cell align="right">
-                      <Button
-                        variant="ghost"
-                        onClick={() => deleteMeal(m.id)}
-                        style={{ color: "#d30606ff" }}
-                      >
-                        <Trash2 size={18} />
-                      </Button>
+                      <Flex gap="1">
+                        <Button
+                          variant="ghost"
+                          onClick={() => navigate(`/add-meal?edit=${m.id}`)}
+                          style={{ color: mainColor }}
+                        >
+                          <Edit size={18} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => deleteMeal(m.id)}
+                          style={{ color: "#d30606ff" }}
+                        >
+                          <Trash2 size={18} />
+                        </Button>
+                      </Flex>
                     </Table.Cell>
                   </Table.Row>
                 ))

@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Box, Flex, Button, Text, Heading } from "@radix-ui/themes";
 import { ArrowLeft } from "lucide-react";
 import FoodData from "../../assets/foodData.json";
@@ -21,13 +22,23 @@ const mealIcons: Record<MealType, string> = {
 
 const AddMeal: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const editId = searchParams.get("edit");
+  const isEditing = !!editId;
+
+  const [editingMeal, setEditingMeal] = useState<any>(null);
+
+  // Toast state
+  const [showToast, setShowToast] = useState(false);
+
   const [selectedUser, setSelectedUser] = useState<User>("Tejas");
   const [selectedDate, setSelectedDate] = useState(getDate());
   const [mealType, setMealType] = useState<MealType | "">("");
+
   const [search, setSearch] = useState("");
   const [food, setFood] = useState("");
   const [quantity, setQuantity] = useState("1");
-  const [showToast, setShowToast] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -39,35 +50,55 @@ const AddMeal: React.FC = () => {
     ? foodOptions.filter((f) => f.toLowerCase().includes(search.toLowerCase()))
     : [];
 
-  const calories = food && quantity ? (FoodData as any)[food] * Number(quantity) : 0;
+  const calories =
+    food && quantity ? (FoodData as any)[food] * Number(quantity) : 0;
 
   const handleSelectFood = (f: string) => {
     setFood(f);
     setSearch(f);
 
-    const updated = [f, ...recentFoods.filter((item) => item !== f)].slice(
-      0,
-      5
-    );
+    const updated = [f, ...recentFoods.filter((item) => item !== f)].slice(0, 5);
     setRecentFoods(updated);
     localStorage.setItem("recentFoods", JSON.stringify(updated));
   };
 
   const saveMeal = () => {
-    if (!mealType || !food) return alert("Missing fields");
+    if (!mealType || !food) {
+      alert("Missing fields");
+      return;
+    }
 
     const stored = JSON.parse(localStorage.getItem("meals") || "[]");
-    stored.push({
-      id: Date.now(),
-      user: selectedUser,
-      type: mealType,
-      food,
-      quantity: Number(quantity),
-      calories,
-      date: selectedDate,
-    });
-    localStorage.setItem("meals", JSON.stringify(stored));
 
+    if (isEditing && editingMeal) {
+      const updatedMeals = stored.map((m: any) =>
+        m.id === editingMeal.id
+          ? {
+              ...m,
+              user: selectedUser,
+              type: mealType,
+              food,
+              quantity: Number(quantity),
+              calories,
+              date: selectedDate,
+            }
+          : m
+      );
+      localStorage.setItem("meals", JSON.stringify(updatedMeals));
+    } else {
+      stored.push({
+        id: Date.now(),
+        user: selectedUser,
+        type: mealType,
+        food,
+        quantity: Number(quantity),
+        calories,
+        date: selectedDate,
+      });
+      localStorage.setItem("meals", JSON.stringify(stored));
+    }
+
+    // Show toast
     setShowToast(true);
     setTimeout(() => {
       setShowToast(false);
@@ -78,6 +109,22 @@ const AddMeal: React.FC = () => {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTo(0, 0);
   }, [food, search]);
+
+  useEffect(() => {
+    if (isEditing && editId) {
+      const stored = JSON.parse(localStorage.getItem("meals") || "[]");
+      const meal = stored.find((m: any) => m.id === Number(editId));
+      if (meal) {
+        setEditingMeal(meal);
+        setSelectedUser(meal.user);
+        setSelectedDate(meal.date);
+        setMealType(meal.type);
+        setFood(meal.food);
+        setSearch(meal.food);
+        setQuantity(meal.quantity.toString());
+      }
+    }
+  }, [isEditing, editId]);
 
   return (
     <Box
@@ -94,13 +141,14 @@ const AddMeal: React.FC = () => {
         <Button variant="soft" onClick={() => navigate("/calories")}>
           <ArrowLeft />
         </Button>
-        <Heading size="6">Add Meal</Heading>
+        <Heading size="6">{isEditing ? "Edit Meal" : "Add Meal"}</Heading>
       </Flex>
 
-      {/* Who */}
+      {/* WHO */}
       <Text size="3" weight="bold" mb="6px">
         Who’s eating?
       </Text>
+
       <Flex gap="10px" mb="22px">
         {USERS.map((u) => {
           const isActive = selectedUser === u;
@@ -116,11 +164,10 @@ const AddMeal: React.FC = () => {
                 borderRadius: "20px",
                 background: isActive ? color : "#e5e7eb",
                 color: isActive ? "white" : "#333",
-                boxShadow: isActive ? `0 6px 14px ${color}55` : "none",
                 border: isActive
                   ? `2px solid ${colorSoft}`
                   : "2px solid transparent",
-                transition: "0.25s",
+                boxShadow: isActive ? `0px 4px 12px ${color}66` : "none",
               }}
             >
               {u}
@@ -133,6 +180,7 @@ const AddMeal: React.FC = () => {
       <Text size="3" weight="bold" mb="6px">
         Date
       </Text>
+
       <input
         type="date"
         value={selectedDate}
@@ -152,6 +200,7 @@ const AddMeal: React.FC = () => {
       <Text size="3" weight="bold" mb="6px">
         Meal Type
       </Text>
+
       <Flex gap="10px" mb="24px" wrap="wrap">
         {MEAL_TYPES.map((m) => (
           <Button
@@ -163,7 +212,6 @@ const AddMeal: React.FC = () => {
               borderRadius: "16px",
               background: mealType === m ? "#22c55e" : "#e5e7eb",
               color: mealType === m ? "white" : "#333",
-              transition: "0.2s",
             }}
           >
             {mealIcons[m]} {m}
@@ -171,10 +219,11 @@ const AddMeal: React.FC = () => {
         ))}
       </Flex>
 
-      {/* Search Food */}
+      {/* Search food */}
       <Text size="3" weight="bold" mb="8px">
         Search Food
       </Text>
+
       <input
         placeholder="Rice, egg, bread..."
         value={search}
@@ -189,7 +238,7 @@ const AddMeal: React.FC = () => {
         }}
       />
 
-      {/* Food list */}
+      {/* FOOD LIST */}
       <Box
         ref={scrollRef}
         style={{
@@ -214,7 +263,6 @@ const AddMeal: React.FC = () => {
               background: food === f ? "#4A90E2" : "white",
               color: food === f ? "white" : "#222",
               boxShadow: "0 1px 5px rgba(0,0,0,0.05)",
-              transition: "0.15s",
             }}
           >
             {f} — {(FoodData as any)[f]} cal
@@ -222,7 +270,7 @@ const AddMeal: React.FC = () => {
         ))}
       </Box>
 
-      {/* Bottom actions */}
+      {/* Quantity + Calories */}
       <Flex justify="between" mb="14px" align="center">
         <input
           type="number"
@@ -239,27 +287,23 @@ const AddMeal: React.FC = () => {
             boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
           }}
         />
+
         <Text weight="bold" style={{ fontSize: "19px" }}>
           🔥 {calories} kcal
         </Text>
       </Flex>
 
-      {/* Save button */}
+      {/* Save */}
       <Button
         onClick={saveMeal}
         style={{
           width: "100%",
-          height: "40px",
+          height: "45px",
           borderRadius: "24px",
           backgroundColor: "#229e46",
           color: "white",
           fontSize: "18px",
           fontWeight: 700,
-          display: "flex",
-          gap: "8px",
-          justifyContent: "center",
-          alignItems: "center",
-          boxShadow: "0 6px 14px rgba(0,0,0,0.15)",
         }}
       >
         Save Meal
@@ -270,18 +314,18 @@ const AddMeal: React.FC = () => {
         <Box
           style={{
             position: "fixed",
-            bottom: "20px",
+            bottom: 20,
             left: "50%",
             transform: "translateX(-50%)",
-            background: "#22c55e",
+            background: "#111",
             color: "white",
             padding: "12px 20px",
             borderRadius: "16px",
-            boxShadow: "0 8px 18px rgba(0,0,0,0.25)",
-            animation: "slideUp 0.5s ease-out",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+            fontWeight: 600,
           }}
         >
-          Meal Saved! 🎉
+          Saved!
         </Box>
       )}
     </Box>

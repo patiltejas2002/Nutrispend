@@ -1,101 +1,153 @@
 // src/Components/ExpensesScreen/AddExpense.tsx
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Box, Flex, Button, Text, Heading } from "@radix-ui/themes";
 import { ArrowLeft } from "lucide-react";
 
-const USERS = ["Tejas", "Nikita"] as const;
-type User = (typeof USERS)[number];
-type TabType = "Expenses" | "Loans";
+type Person = "Tejas" | "Nikita";
+type SplitMode = "Equal" | "PaidByTejas" | "PaidByNikita";
 
 type ExpenseItem = {
-  id: number;
-  name: string;
+  id: string;
+  title: string;
   amount: number;
-  desc?: string;
-  user: User;
-  type: TabType;
+  note?: string;
   date: string;
+  paidBy: Person;
+  splitMode: SplitMode;
+  owesTo: Person | null;
+  owesAmount: number;
+  createdAt: number;
   paid: boolean;
 };
 
-const STORAGE_KEY = "expensesData_v1";
+const EXP_KEY = "expenses_v2";
 
-const loadFromStorage = (): ExpenseItem[] => {
+const loadExpenses = (): ExpenseItem[] => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return JSON.parse(localStorage.getItem(EXP_KEY) || "[]");
   } catch {
     return [];
   }
 };
 
-const saveToStorage = (items: ExpenseItem[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-};
+const saveExpenses = (arr: ExpenseItem[]) =>
+  localStorage.setItem(EXP_KEY, JSON.stringify(arr));
 
-const getToday = () => new Date().toISOString().split("T")[0];
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+// Generate unique ID
+const uid = () =>
+  Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 const AddExpense: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  const isEditing = !!editId;
+  const [toastMsg, setToastMsg] = useState("");
 
-  const [tab, setTab] = useState<TabType>("Expenses");
-  const [user, setUser] = useState<User>("Tejas");
+  // FORM STATE
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
-  const [desc, setDesc] = useState("");
-  const [date, setDate] = useState(getToday());
-  const [split, setSplit] = useState(false);
+  const [date, setDate] = useState(todayISO());
+  const [note, setNote] = useState("");
 
-  const mainColor = user === "Tejas" ? "#4A90E2" : "#FC4986";
+  const [paidBy, setPaidBy] = useState<Person>("Tejas");
+  const [splitMode, setSplitMode] = useState<SplitMode>("Equal");
+
+  const mainColor = "#4A90E2";
+
+  useEffect(() => {
+    if (isEditing) {
+      const expenses = loadExpenses();
+      const item = expenses.find((e) => e.id === editId);
+      if (item) {
+        setTitle(item.title);
+        setAmount(item.amount.toString());
+        setDate(item.date);
+        setNote(item.note || "");
+        setPaidBy(item.paidBy);
+        setSplitMode(item.splitMode);
+      }
+    }
+  }, [isEditing, editId]);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(""), 2200);
+  };
+
+  // COMPUTE HOW MUCH IS OWED
+  const computeOwes = (amount: number, paidBy: Person, mode: SplitMode) => {
+    if (mode === "Equal") {
+      return { owesTo: paidBy, owesAmount: +(amount / 2).toFixed(2) };
+    }
+    if (mode === "PaidByTejas") {
+      return { owesTo: "Tejas", owesAmount: amount };
+    }
+    if (mode === "PaidByNikita") {
+      return { owesTo: "Nikita", owesAmount: amount };
+    }
+    return { owesTo: null, owesAmount: 0 };
+  };
 
   const handleSave = () => {
     const amt = Number(amount);
-    if (!title || !amt || amt <= 0) {
-      alert("Enter valid Title & Amount");
+
+    if (!title.trim() || amt <= 0) {
+      showToast("Enter valid Title & Amount");
       return;
     }
 
-    const existing = loadFromStorage();
-    const now = Date.now();
+    const expenses = loadExpenses();
 
-    const makeItem = (u: User, value: number): ExpenseItem => ({
-      id: now + Math.random(),
-      name: title,
-      amount: value,
-      desc,
-      user: u,
-      type: tab,
-      date,
-      paid: false,
-    });
+    const { owesTo, owesAmount } = computeOwes(amt, paidBy, splitMode);
 
-    let newItems: ExpenseItem[] = [];
-
-    if (tab === "Expenses") {
-      if (split) {
-        const half = amt / 2;
-        newItems = [makeItem("Tejas", half), makeItem("Nikita", half)];
-      } else {
-        newItems = [makeItem(user, amt)];
-      }
+    if (isEditing) {
+      const updatedExpenses = expenses.map((e) =>
+        e.id === editId
+          ? {
+              ...e,
+              title: title.trim(),
+              amount: amt,
+              note: note.trim() || undefined,
+              date,
+              paidBy,
+              splitMode,
+              owesTo,
+              owesAmount,
+            }
+          : e
+      );
+      saveExpenses(updatedExpenses);
+      showToast("Updated Successfully!");
     } else {
-      newItems = [makeItem(user, amt)];
+      const newItem: ExpenseItem = {
+        id: uid(),
+        title: title.trim(),
+        amount: amt,
+        note: note.trim() || undefined,
+        date,
+        paidBy,
+        splitMode,
+        owesTo,
+        owesAmount,
+        createdAt: Date.now(),
+        paid: false,
+      };
+
+      saveExpenses([newItem, ...expenses]);
+      showToast("Saved Successfully!");
     }
 
-    saveToStorage([...existing, ...newItems]);
-    navigate("/expenses");
+    setTimeout(() => navigate("/expenses"), 800);
   };
 
   return (
     <Box
-      className="mobile-padding"
       style={{
         minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
         padding: "24px 18px",
         background: "linear-gradient(120deg,#dcfce7,#f3e8ff,#e0f2fe)",
       }}
@@ -105,53 +157,67 @@ const AddExpense: React.FC = () => {
         <Button variant="soft" onClick={() => navigate("/expenses")}>
           <ArrowLeft />
         </Button>
-        <Heading size="6">Add Entry</Heading>
+        <Heading size="6">{isEditing ? "Edit Expense" : "Add Expense"}</Heading>
       </Flex>
 
-      {/* Type Toggle */}
-      <Text size="3" weight="bold" mb="10px">Type</Text>
+      {/* Paid By */}
+      <Text size="3" weight="bold" mb="10px">Paid By</Text>
       <Flex gap="10px" mb="24px">
-        {(["Expenses", "Loans"] as TabType[]).map((t) => (
+        {(["Tejas", "Nikita"] as Person[]).map((p) => (
           <Button
-            key={t}
-            onClick={() => setTab(t)}
+            key={p}
+            onClick={() => setPaidBy(p)}
             style={{
               flex: 1,
               borderRadius: 999,
-              backgroundColor: tab === t ? mainColor : "#e5e7eb",
-              color: tab === t ? "white" : "#333",
+              backgroundColor: paidBy === p ? mainColor : "#e5e7eb",
+              color: paidBy === p ? "white" : "#333",
               fontWeight: 600,
-              transition: "0.2s",
             }}
           >
-            {t}
+            {p}
           </Button>
         ))}
       </Flex>
 
-      {/* User Toggle */}
-      <Text size="3" weight="bold" mb="10px">Who?</Text>
+      {/* Split Mode */}
+      <Text size="3" weight="bold" mb="10px">Split Type</Text>
       <Flex gap="10px" mb="24px">
-        {USERS.map((u) => (
-          <Button
-            key={u}
-            onClick={() => setUser(u)}
-            style={{
-              flex: 1,
-              borderRadius: 999,
-              backgroundColor:
-                user === u
-                  ? u === "Tejas"
-                    ? "#4A90E2"
-                    : "#FC4986"
-                  : "#e5e7eb",
-              color: user === u ? "white" : "#333",
-              fontWeight: 600,
-            }}
-          >
-            {u}
-          </Button>
-        ))}
+        <Button
+          style={{
+            flex: 1,
+            borderRadius: 999,
+            backgroundColor: splitMode === "Equal" ? mainColor : "#e5e7eb",
+            color: splitMode === "Equal" ? "white" : "#333",
+          }}
+          onClick={() => setSplitMode("Equal")}
+        >
+          Equal Split
+        </Button>
+
+        <Button
+          style={{
+            flex: 1,
+            borderRadius: 999,
+            backgroundColor: splitMode === "PaidByTejas" ? mainColor : "#e5e7eb",
+            color: splitMode === "PaidByTejas" ? "white" : "#333",
+          }}
+          onClick={() => setSplitMode("PaidByTejas")}
+        >
+          Tejas Paid Full
+        </Button>
+
+        <Button
+          style={{
+            flex: 1,
+            borderRadius: 999,
+            backgroundColor: splitMode === "PaidByNikita" ? mainColor : "#e5e7eb",
+            color: splitMode === "PaidByNikita" ? "white" : "#333",
+          }}
+          onClick={() => setSplitMode("PaidByNikita")}
+        >
+          Nikita Paid Full
+        </Button>
       </Flex>
 
       {/* Title */}
@@ -159,7 +225,7 @@ const AddExpense: React.FC = () => {
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Dinner, Ola ride, etc..."
+        placeholder="Dinner, Ola ride..."
         style={{
           width: "100%",
           padding: "14px",
@@ -197,7 +263,7 @@ const AddExpense: React.FC = () => {
           width: "100%",
           padding: "14px",
           borderRadius: 16,
-          marginBottom: 20,
+          marginBottom: 16,
           border: "none",
           boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         }}
@@ -206,56 +272,55 @@ const AddExpense: React.FC = () => {
       {/* Description */}
       <Text size="3" weight="bold" mb="6px">Description</Text>
       <textarea
-        value={desc}
-        onChange={(e) => setDesc(e.target.value)}
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Optional..."
         rows={3}
-        placeholder="Optional notes..."
         style={{
           width: "100%",
           padding: "14px",
           borderRadius: 16,
-          resize: "vertical",
           marginBottom: 20,
           border: "none",
           boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         }}
       />
 
-      {/* Split option */}
-      {tab === "Expenses" && (
-        <label
-          style={{
-            display: "flex",
-            gap: 10,
-            alignItems: "center",
-            marginBottom: 30,
-            fontWeight: 600,
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={split}
-            onChange={(e) => setSplit(e.target.checked)}
-          />
-          Split equally between Tejas & Nikita
-        </label>
-      )}
-
       {/* Save Button */}
       <Button
         onClick={handleSave}
         style={{
           width: "100%",
-          height: "48px",
+          height: 50,
           borderRadius: 24,
           backgroundColor: mainColor,
           color: "white",
-          fontSize: "17px",
-          fontWeight: "bold",
+          fontSize: 17,
+          fontWeight: 700,
         }}
       >
-        Save
+        {isEditing ? "Update Expense" : "Save Expense"}
       </Button>
+
+      {/* Toast */}
+      {toastMsg && (
+        <Box
+          style={{
+            position: "fixed",
+            bottom: 20,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#111",
+            color: "white",
+            padding: "14px 22px",
+            borderRadius: 16,
+            boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
+            fontWeight: 600,
+          }}
+        >
+          {toastMsg}
+        </Box>
+      )}
     </Box>
   );
 };

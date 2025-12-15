@@ -10,25 +10,28 @@ import {
   Separator,
   Card,
 } from "@radix-ui/themes";
-import { Trash2, BarChart2, ArrowLeft } from "lucide-react";
+import { Trash2, BarChart2, ArrowLeft, Edit } from "lucide-react";
 
 const USERS = ["Tejas", "Nikita"] as const;
 type User = (typeof USERS)[number];
 
-type TabType = "Expenses" | "Loans";
+type TabType = "SplitExpenses" | "PaidExpenses" | "Loans";
 
 type ExpenseItem = {
-  id: number;
-  name: string;
+  id: string;
+  title: string;
   amount: number;
-  desc?: string;
-  user: User;
-  type: TabType;
+  note?: string;
   date: string;
+  paidBy: User;
+  splitMode: "Equal" | "PaidByTejas" | "PaidByNikita";
+  owesTo: User | null;
+  owesAmount: number;
+  createdAt: number;
   paid: boolean;
 };
 
-const STORAGE_KEY = "expensesData_v1";
+const STORAGE_KEY = "expenses_v2";
 const loadFromStorage = (): ExpenseItem[] =>
   JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 
@@ -38,12 +41,11 @@ const saveToStorage = (items: ExpenseItem[]) =>
 const ExpensesScreen: React.FC = () => {
   const navigate = useNavigate();
 
-  const [tab, setTab] = useState<TabType>("Expenses");
-  const [userTab, setUserTab] = useState<User>("Tejas");
+  const [tab, setTab] = useState<TabType>("SplitExpenses");
   const [items, setItems] = useState<ExpenseItem[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | "ALL">("ALL");
 
-  const mainColor = userTab === "Tejas" ? "#4A90E2" : "#FC4986";
+  const mainColor = "#4A90E2"; 
 
   useEffect(() => {
     setItems(loadFromStorage());
@@ -55,27 +57,37 @@ const ExpensesScreen: React.FC = () => {
   };
 
   const filteredItems = useMemo(() => {
-    let base = items.filter((i) => i.type === tab && i.user === userTab);
+    let base = items.filter((i) => {
+      if (tab === "SplitExpenses") return i.splitMode === "Equal" && i.paid === true;
+      if (tab === "PaidExpenses") return (i.splitMode === "PaidByTejas" || i.splitMode === "PaidByNikita") && i.paid === true;
+      if (tab === "Loans") return i.paid === false;
+      return false;
+    });
     if (selectedDate !== "ALL") base = base.filter((i) => i.date === selectedDate);
     return base.sort((a, b) => b.date.localeCompare(a.date));
-  }, [items, tab, userTab, selectedDate]);
+  }, [items, tab, selectedDate]);
 
   const totalAmount = filteredItems.reduce((sum, i) => sum + i.amount, 0);
 
   const uniqueDates = useMemo(() => {
     const set = new Set<string>();
     items
-      .filter((i) => i.type === tab && i.user === userTab)
+      .filter((i) => {
+        if (tab === "SplitExpenses") return i.splitMode === "Equal" && i.paid === true;
+        if (tab === "PaidExpenses") return (i.splitMode === "PaidByTejas" || i.splitMode === "PaidByNikita") && i.paid === true;
+        if (tab === "Loans") return i.paid === false;
+        return false;
+      })
       .forEach((i) => set.add(i.date));
     return ["ALL", ...Array.from(set).sort().reverse()];
-  }, [items, tab, userTab]);
+  }, [items, tab]);
 
-  const deleteEntry = (id: number) => {
+  const deleteEntry = (id: string) => {
     if (!window.confirm("Delete entry?")) return;
     updateItems(items.filter((i) => i.id !== id));
   };
 
-  const togglePaid = (id: number) => {
+  const togglePaid = (id: string) => {
     const updated = items.map((i) =>
       i.id === id ? { ...i, paid: !i.paid } : i
     );
@@ -107,7 +119,7 @@ const ExpensesScreen: React.FC = () => {
             </Heading>
           </Flex>
 
-          <Flex gap="2">
+          <Flex direction="column" gap="2">
             <Button
               onClick={() => navigate("/expenses/add")}
               style={{
@@ -117,7 +129,7 @@ const ExpensesScreen: React.FC = () => {
                 fontWeight: 600,
               }}
             >
-              Add
+              {tab === "Loans" ? "Add Loan" : "Add Expense"}
             </Button>
             <Button
               variant="outline"
@@ -139,7 +151,7 @@ const ExpensesScreen: React.FC = () => {
         {/* Tabs */}
         <Text size="3" weight="bold" mb="10px">What to track?</Text>
         <Flex gap="10px" mb="22px">
-          {(["Expenses", "Loans"] as TabType[]).map((t) => (
+          {(["SplitExpenses", "PaidExpenses", "Loans"] as TabType[]).map((t) => (
             <Button
               key={t}
               onClick={() => setTab(t)}
@@ -151,31 +163,7 @@ const ExpensesScreen: React.FC = () => {
                 fontWeight: 600,
               }}
             >
-              {t}
-            </Button>
-          ))}
-        </Flex>
-
-        {/* Who */}
-        <Text size="3" weight="bold" mb="10px">Who?</Text>
-        <Flex gap="10px" mb="20px">
-          {USERS.map((u) => (
-            <Button
-              key={u}
-              onClick={() => setUserTab(u)}
-              style={{
-                flex: 1,
-                borderRadius: 999,
-                background: userTab === u
-                  ? u === "Tejas"
-                    ? "#4A90E2"
-                    : "#FC4986"
-                  : "#d4d4d8",
-                color: userTab === u ? "white" : "#333",
-                fontWeight: 600,
-              }}
-            >
-              {u}
+              {t === "SplitExpenses" ? "Split Expenses" : t === "PaidExpenses" ? "Paid Expenses" : "Loans"}
             </Button>
           ))}
         </Flex>
@@ -207,6 +195,7 @@ const ExpensesScreen: React.FC = () => {
             <Table.Header>
               <Table.Row>
                 <Table.ColumnHeaderCell>Title</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Who</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Date</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell align="center">Amount</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell align="center">Status</Table.ColumnHeaderCell>
@@ -217,7 +206,7 @@ const ExpensesScreen: React.FC = () => {
             <Table.Body>
               {filteredItems.length === 0 ? (
                 <Table.Row>
-                  <Table.Cell colSpan={5} align="center">
+                  <Table.Cell colSpan={6} align="center">
                     <Text>No entries for this filter</Text>
                   </Table.Cell>
                 </Table.Row>
@@ -225,13 +214,14 @@ const ExpensesScreen: React.FC = () => {
                 filteredItems.map((item) => (
                   <Table.Row key={item.id} style={{ background: "white" }}>
                     <Table.Cell>
-                      <Text weight="bold">{item.name}</Text>
-                      {item.desc && (
+                      <Text weight="bold">{item.title}</Text>
+                      {item.note && (
                         <Text as="div" color="gray" size="1">
-                          {item.desc}
+                          {item.note}
                         </Text>
                       )}
                     </Table.Cell>
+                    <Table.Cell>{item.paidBy}</Table.Cell>
                     <Table.Cell>{item.date}</Table.Cell>
                     <Table.Cell align="center">
                       ₹ {item.amount.toFixed(2)}
@@ -251,14 +241,24 @@ const ExpensesScreen: React.FC = () => {
                       </Button>
                     </Table.Cell>
                     <Table.Cell align="right">
-                      <Button
-                        size="1"
-                        variant="ghost"
-                        onClick={() => deleteEntry(item.id)}
-                        style={{ color: "#d30606" }}
-                      >
-                        <Trash2 size={16} />
-                      </Button>
+                      <Flex gap="1">
+                        <Button
+                          size="1"
+                          variant="ghost"
+                          onClick={() => navigate(`/expenses/add?edit=${item.id}`)}
+                          style={{ color: "#4A90E2" }}
+                        >
+                          <Edit size={16} />
+                        </Button>
+                        <Button
+                          size="1"
+                          variant="ghost"
+                          onClick={() => deleteEntry(item.id)}
+                          style={{ color: "#d30606" }}
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </Flex>
                     </Table.Cell>
                   </Table.Row>
                 ))
