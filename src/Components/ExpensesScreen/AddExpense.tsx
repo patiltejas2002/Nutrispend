@@ -1,147 +1,133 @@
-// src/Components/ExpensesScreen/AddExpense.tsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Flex,
+  Button,
+  Text,
+  Heading,
+  Card,
+  TextField,
+  TextArea,
+} from "@radix-ui/themes";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Box, Flex, Button, Text, Heading } from "@radix-ui/themes";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Calendar } from "lucide-react";
 
+type EntryType = "EXPENSE" | "LOAN";
 type Person = "Tejas" | "Nikita";
-type SplitMode = "Equal" | "PaidByTejas" | "PaidByNikita";
 
-type ExpenseItem = {
+type Entry = {
   id: string;
+  type: EntryType;
   title: string;
+  description?: string;
   amount: number;
-  note?: string;
+  splitAmount: number;
   date: string;
   paidBy: Person;
-  splitMode: SplitMode;
-  owesTo: Person | null;
-  owesAmount: number;
-  createdAt: number;
-  paid: boolean;
+  otherPerson: Person;
+  settled: boolean;
 };
 
-const EXP_KEY = "expenses_v2";
+const STORAGE_KEY = "simple_entries_v1";
 
-const loadExpenses = (): ExpenseItem[] => {
-  try {
-    return JSON.parse(localStorage.getItem(EXP_KEY) || "[]");
-  } catch {
-    return [];
-  }
-};
-
-const saveExpenses = (arr: ExpenseItem[]) =>
-  localStorage.setItem(EXP_KEY, JSON.stringify(arr));
-
-const todayISO = () => new Date().toISOString().slice(0, 10);
-
-// Generate unique ID
 const uid = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+const todayISO = () => new Date().toISOString().slice(0, 10);
 
 const AddExpense: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
   const editId = searchParams.get("edit");
   const isEditing = !!editId;
-  const [toastMsg, setToastMsg] = useState("");
 
-  // FORM STATE
+  const [type, setType] = useState<EntryType>("EXPENSE");
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayISO());
-  const [note, setNote] = useState("");
-
   const [paidBy, setPaidBy] = useState<Person>("Tejas");
-  const [splitMode, setSplitMode] = useState<SplitMode>("Equal");
 
-  const mainColor = "#4A90E2";
+  const otherPerson: Person =
+    paidBy === "Tejas" ? "Nikita" : "Tejas";
 
+  // 🎨 Theme
+  const theme =
+    paidBy === "Tejas"
+      ? { main: "#4A90E2", soft: "#e0f2fe" }
+      : { main: "#ec4899", soft: "#fce7f3" };
+
+  const numericAmount = Number(amount) || 0;
+  const splitAmount =
+    type === "EXPENSE"
+      ? +(numericAmount / 2).toFixed(2)
+      : numericAmount;
+
+  /* ================= EDIT PREFILL ================= */
   useEffect(() => {
-    if (isEditing) {
-      const expenses = loadExpenses();
-      const item = expenses.find((e) => e.id === editId);
-      if (item) {
-        setTitle(item.title);
-        setAmount(item.amount.toString());
-        setDate(item.date);
-        setNote(item.note || "");
-        setPaidBy(item.paidBy);
-        setSplitMode(item.splitMode);
-      }
-    }
+    if (!isEditing) return;
+
+    const data: Entry[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEY) || "[]"
+    );
+
+    const entry = data.find((e) => e.id === editId);
+    if (!entry) return;
+
+    setType(entry.type);
+    setTitle(entry.title);
+    setDescription(entry.description || "");
+    setAmount(entry.amount.toString());
+    setDate(entry.date);
+    setPaidBy(entry.paidBy);
   }, [isEditing, editId]);
 
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(""), 2200);
-  };
+  /* ================= SAVE ================= */
+  const save = () => {
+    if (!title.trim() || numericAmount <= 0) return;
 
-  // COMPUTE HOW MUCH IS OWED
-  const computeOwes = (amount: number, paidBy: Person, mode: SplitMode) => {
-    if (mode === "Equal") {
-      return { owesTo: paidBy, owesAmount: +(amount / 2).toFixed(2) };
-    }
-    if (mode === "PaidByTejas") {
-      return { owesTo: "Tejas", owesAmount: amount };
-    }
-    if (mode === "PaidByNikita") {
-      return { owesTo: "Nikita", owesAmount: amount };
-    }
-    return { owesTo: null, owesAmount: 0 };
-  };
-
-  const handleSave = () => {
-    const amt = Number(amount);
-
-    if (!title.trim() || amt <= 0) {
-      showToast("Enter valid Title & Amount");
-      return;
-    }
-
-    const expenses = loadExpenses();
-
-    const { owesTo, owesAmount } = computeOwes(amt, paidBy, splitMode);
+    const data: Entry[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEY) || "[]"
+    );
 
     if (isEditing) {
-      const updatedExpenses = expenses.map((e) =>
+      const updated = data.map((e) =>
         e.id === editId
           ? {
               ...e,
+              type,
               title: title.trim(),
-              amount: amt,
-              note: note.trim() || undefined,
+              description: description.trim() || undefined,
+              amount: numericAmount,
+              splitAmount,
               date,
               paidBy,
-              splitMode,
-              owesTo,
-              owesAmount,
+              otherPerson,
             }
           : e
       );
-      saveExpenses(updatedExpenses);
-      showToast("Updated Successfully!");
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     } else {
-      const newItem: ExpenseItem = {
+      const newEntry: Entry = {
         id: uid(),
+        type,
         title: title.trim(),
-        amount: amt,
-        note: note.trim() || undefined,
+        description: description.trim() || undefined,
+        amount: numericAmount,
+        splitAmount,
         date,
         paidBy,
-        splitMode,
-        owesTo,
-        owesAmount,
-        createdAt: Date.now(),
-        paid: false,
+        otherPerson,
+        settled: false,
       };
 
-      saveExpenses([newItem, ...expenses]);
-      showToast("Saved Successfully!");
+      data.unshift(newEntry);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
 
-    setTimeout(() => navigate("/expenses"), 800);
+    navigate("/expenses");
   };
 
   return (
@@ -149,178 +135,157 @@ const AddExpense: React.FC = () => {
       style={{
         minHeight: "100vh",
         padding: "24px 18px",
-        background: "linear-gradient(120deg,#dcfce7,#f3e8ff,#e0f2fe)",
+        background: `linear-gradient(120deg,${theme.soft},#fff)`,
       }}
     >
-      {/* Header */}
-      <Flex align="center" gap="3" mb="28px">
-        <Button variant="soft" onClick={() => navigate("/expenses")}>
-          <ArrowLeft />
-        </Button>
-        <Heading size="6">{isEditing ? "Edit Expense" : "Add Expense"}</Heading>
-      </Flex>
-
-      {/* Paid By */}
-      <Text size="3" weight="bold" mb="10px">Paid By</Text>
-      <Flex gap="10px" mb="24px">
-        {(["Tejas", "Nikita"] as Person[]).map((p) => (
+      <Box style={{ maxWidth: 520, margin: "0 auto" }}>
+        {/* HEADER */}
+        <Flex align="center" gap="3" mb="24px">
           <Button
-            key={p}
-            onClick={() => setPaidBy(p)}
-            style={{
-              flex: 1,
-              borderRadius: 999,
-              backgroundColor: paidBy === p ? mainColor : "#e5e7eb",
-              color: paidBy === p ? "white" : "#333",
-              fontWeight: 600,
-            }}
+            variant="soft"
+            onClick={() => navigate("/expenses")}
+            style={{ borderRadius: 999 }}
           >
-            {p}
+            <ArrowLeft />
           </Button>
-        ))}
-      </Flex>
+          <Heading size="6">
+            {isEditing
+              ? "Edit Entry"
+              : `Add ${type === "EXPENSE" ? "Expense" : "Loan"}`}
+          </Heading>
+        </Flex>
 
-      {/* Split Mode */}
-      <Text size="3" weight="bold" mb="10px">Split Type</Text>
-      <Flex gap="10px" mb="24px">
-        <Button
+        {/* TYPE */}
+        <Text weight="bold" mb="8px">
+          What are you adding?
+        </Text>
+        <Flex gap="10px" mb="22px">
+          {(["EXPENSE", "LOAN"] as EntryType[]).map((t) => (
+            <Button
+              key={t}
+              onClick={() => setType(t)}
+              style={{
+                flex: 1,
+                borderRadius: 999,
+                backgroundColor:
+                  type === t ? theme.main : "#e5e7eb",
+                color: type === t ? "white" : "#333",
+                fontWeight: 600,
+              }}
+            >
+              {t === "EXPENSE" ? "Expense" : "Loan"}
+            </Button>
+          ))}
+        </Flex>
+
+        {/* PAID BY */}
+        <Text weight="bold" mb="8px">
+          Who paid?
+        </Text>
+        <Flex gap="10px" mb="22px">
+          {(["Tejas", "Nikita"] as Person[]).map((p) => (
+            <Button
+              key={p}
+              onClick={() => setPaidBy(p)}
+              style={{
+                flex: 1,
+                borderRadius: 999,
+                backgroundColor:
+                  paidBy === p ? theme.main : "#e5e7eb",
+                color: paidBy === p ? "white" : "#333",
+                fontWeight: 600,
+              }}
+            >
+              {p}
+            </Button>
+          ))}
+        </Flex>
+
+        {/* INFO */}
+        <Card
           style={{
-            flex: 1,
-            borderRadius: 999,
-            backgroundColor: splitMode === "Equal" ? mainColor : "#e5e7eb",
-            color: splitMode === "Equal" ? "white" : "#333",
-          }}
-          onClick={() => setSplitMode("Equal")}
-        >
-          Equal Split
-        </Button>
-
-        <Button
-          style={{
-            flex: 1,
-            borderRadius: 999,
-            backgroundColor: splitMode === "PaidByTejas" ? mainColor : "#e5e7eb",
-            color: splitMode === "PaidByTejas" ? "white" : "#333",
-          }}
-          onClick={() => setSplitMode("PaidByTejas")}
-        >
-          Tejas Paid Full
-        </Button>
-
-        <Button
-          style={{
-            flex: 1,
-            borderRadius: 999,
-            backgroundColor: splitMode === "PaidByNikita" ? mainColor : "#e5e7eb",
-            color: splitMode === "PaidByNikita" ? "white" : "#333",
-          }}
-          onClick={() => setSplitMode("PaidByNikita")}
-        >
-          Nikita Paid Full
-        </Button>
-      </Flex>
-
-      {/* Title */}
-      <Text size="3" weight="bold" mb="6px">Title</Text>
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Dinner, Ola ride..."
-        style={{
-          width: "100%",
-          padding: "14px",
-          borderRadius: 16,
-          marginBottom: 16,
-          border: "none",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        }}
-      />
-
-      {/* Amount */}
-      <Text size="3" weight="bold" mb="6px">Amount (₹)</Text>
-      <input
-        type="number"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        placeholder="Enter amount"
-        style={{
-          width: "100%",
-          padding: "14px",
-          borderRadius: 16,
-          marginBottom: 16,
-          border: "none",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        }}
-      />
-
-      {/* Date */}
-      <Text size="3" weight="bold" mb="6px">Date</Text>
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "14px",
-          borderRadius: 16,
-          marginBottom: 16,
-          border: "none",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        }}
-      />
-
-      {/* Description */}
-      <Text size="3" weight="bold" mb="6px">Description</Text>
-      <textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder="Optional..."
-        rows={3}
-        style={{
-          width: "100%",
-          padding: "14px",
-          borderRadius: 16,
-          marginBottom: 20,
-          border: "none",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        }}
-      />
-
-      {/* Save Button */}
-      <Button
-        onClick={handleSave}
-        style={{
-          width: "100%",
-          height: 50,
-          borderRadius: 24,
-          backgroundColor: mainColor,
-          color: "white",
-          fontSize: 17,
-          fontWeight: 700,
-        }}
-      >
-        {isEditing ? "Update Expense" : "Save Expense"}
-      </Button>
-
-      {/* Toast */}
-      {toastMsg && (
-        <Box
-          style={{
-            position: "fixed",
-            bottom: 20,
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "#111",
-            color: "white",
-            padding: "14px 22px",
+            marginBottom: 20,
+            padding: 16,
             borderRadius: 16,
-            boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
-            fontWeight: 600,
+            background: "#f8fafc",
           }}
         >
-          {toastMsg}
-        </Box>
-      )}
+          <Text size="2">
+            <b>{otherPerson}</b> owes <b>{paidBy}</b> ₹{splitAmount}
+            {type === "EXPENSE" ? " (half share)" : ""}
+          </Text>
+        </Card>
+
+        {/* TITLE */}
+        <Text weight="bold" mb="6px">
+          Title
+        </Text>
+        <TextField.Root
+          placeholder="Dinner, Movie, Cash given..."
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          mb="16px"
+        />
+
+        {/* DESCRIPTION */}
+        <Text weight="bold" mb="6px">
+          Description (optional)
+        </Text>
+        <TextArea
+          placeholder="Extra details..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={3}
+          mb="16px"
+        />
+
+        {/* AMOUNT */}
+        <Text weight="bold" mb="6px">
+          Amount (₹)
+        </Text>
+        <TextField.Root
+          type="number"
+          placeholder="Enter amount"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          mb="16px"
+        />
+
+        {/* DATE */}
+        <Text weight="bold" mb="6px">
+          Date
+        </Text>
+        <Flex align="center" gap="8px" mb="24px">
+          <Calendar size={18} />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            style={{
+              padding: "10px",
+              borderRadius: 10,
+              border: "1px solid #e5e7eb",
+              width: "100%",
+            }}
+          />
+        </Flex>
+
+        {/* SAVE */}
+        <Button
+          onClick={save}
+          style={{
+            width: "100%",
+            height: 50,
+            borderRadius: 999,
+            backgroundColor: theme.main,
+            color: "white",
+            fontWeight: 700,
+            fontSize: 16,
+          }}
+        >
+          {isEditing ? "Update" : "Save"}
+        </Button>
+      </Box>
     </Box>
   );
 };

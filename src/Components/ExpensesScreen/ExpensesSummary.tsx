@@ -23,81 +23,82 @@ import {
   CartesianGrid,
 } from "recharts";
 
-const USERS = ["Tejas", "Nikita"] as const;
-type User = (typeof USERS)[number];
-type TabType = "Expenses" | "Loans";
+type User = "Tejas" | "Nikita";
 
-type ExpenseItem = {
-  id: number;
-  name: string;
+type Entry = {
+  id: string;
+  type: "EXPENSE" | "LOAN";
+  title: string;
   amount: number;
-  desc?: string;
-  user: User;
-  type: TabType;
-  date: string;
-  paid: boolean;
+  paidBy: User;
+  otherPerson: User;
+  settled: boolean;
 };
 
-const STORAGE_KEY = "expensesData_v1";
+const STORAGE_KEY = "simple_entries_v1";
 
-const loadFromStorage = (): ExpenseItem[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-};
+const loadFromStorage = (): Entry[] =>
+  JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 
-const COLORS = {
+const COLORS: Record<User, string> = {
   Tejas: "#4A90E2",
-  Nikita: "#FC4986", 
+  Nikita: "#ec4899",
 };
 
 const ExpensesSummary: React.FC = () => {
   const navigate = useNavigate();
   const items = useMemo(loadFromStorage, []);
-  
-  const totals = useMemo(() => {
-    const totalExpenses: Record<User, number> = { Tejas: 0, Nikita: 0 };
-    const totalLoansUnpaid: Record<User, number> = { Tejas: 0, Nikita: 0 };
+
+  const summary = useMemo(() => {
+    const totalExpenses: Record<User, number> = {
+      Tejas: 0,
+      Nikita: 0,
+    };
+
+    const totalLoansUnpaid: Record<User, number> = {
+      Tejas: 0,
+      Nikita: 0,
+    };
 
     items.forEach((i) => {
-      if (i.type === "Expenses") totalExpenses[i.user] += i.amount;
-      if (i.type === "Loans" && !i.paid) totalLoansUnpaid[i.user] += i.amount;
+      // ✅ EXPENSES → split equally
+      if (i.type === "EXPENSE") {
+        const share = i.amount / 2;
+        totalExpenses[i.paidBy] += share;
+        totalExpenses[i.otherPerson] += share;
+      }
+
+      // ✅ LOANS → otherPerson owes paidBy
+      if (i.type === "LOAN" && !i.settled) {
+        totalLoansUnpaid[i.otherPerson] += i.amount;
+      }
     });
 
-    const tejasLoans = totalLoansUnpaid.Tejas;
-    const nikitaLoans = totalLoansUnpaid.Nikita;
-    let whoOwes = "";
-    let diff = 0;
+    // Settlement calculation
+    let settleText = "You are settled up 🎉";
+    const diff = totalLoansUnpaid.Tejas - totalLoansUnpaid.Nikita;
 
-    if (tejasLoans > nikitaLoans) {
-      diff = tejasLoans - nikitaLoans;
-      whoOwes = `Tejas owes Nikita ₹${diff.toFixed(2)}`;
-    } else if (nikitaLoans > tejasLoans) {
-      diff = nikitaLoans - tejasLoans;
-      whoOwes = `Nikita owes Tejas ₹${diff.toFixed(2)}`;
-    } else {
-      whoOwes = "You are settled up 🎉";
+    if (diff > 0) {
+      settleText = `Tejas owes Nikita ₹${diff.toFixed(2)}`;
+    } else if (diff < 0) {
+      settleText = `Nikita owes Tejas ₹${Math.abs(diff).toFixed(2)}`;
     }
 
     return {
       totalExpenses,
       totalLoansUnpaid,
-      whoOwes,
+      settleText,
     };
   }, [items]);
 
-  const pieData = USERS.map((u) => ({
+  const expensePieData = (["Tejas", "Nikita"] as User[]).map((u) => ({
     name: u,
-    value: totals.totalExpenses[u],
+    value: summary.totalExpenses[u],
   }));
 
-  const loanData = USERS.map((u) => ({
+  const loanBarData = (["Tejas", "Nikita"] as User[]).map((u) => ({
     name: u,
-    value: totals.totalLoansUnpaid[u],
+    value: summary.totalLoansUnpaid[u],
   }));
 
   return (
@@ -109,7 +110,7 @@ const ExpensesSummary: React.FC = () => {
       }}
     >
       <Box style={{ maxWidth: 820, margin: "0 auto" }}>
-        {/* Header */}
+        {/* HEADER */}
         <Flex align="center" gap="3" mb="28px">
           <Button
             variant="soft"
@@ -121,32 +122,28 @@ const ExpensesSummary: React.FC = () => {
           <Heading size="6">Expenses Summary</Heading>
         </Flex>
 
-        {/* Pie Chart: Spending % */}
-        <Card
-          style={{
-            padding: 16,
-            borderRadius: 18,
-            backgroundColor: "white",
-          }}
-        >
+        {/* EXPENSE PIE */}
+        <Card style={{ padding: 16, borderRadius: 18 }}>
           <Heading size="4" mb="2">
-            Spending Comparison 💰
+            Spending Split 💰
           </Heading>
           <Text size="2" color="gray" mb="3">
-            Total expenses between Tejas & Nikita
+            Total shared expenses (50–50)
           </Text>
 
           <Box style={{ width: "100%", height: 260 }}>
             <ResponsiveContainer>
               <PieChart>
                 <Pie
-                  data={pieData}
+                  data={expensePieData}
                   dataKey="value"
                   nameKey="name"
                   outerRadius={110}
-                  label={(entry) => `${entry.name} (${entry.value})`}
+                  label={(e) =>
+                    `${e.name} ₹${Number(e.value).toFixed(0)}`
+                  }
                 >
-                  {pieData.map((d, i) => (
+                  {expensePieData.map((d, i) => (
                     <Cell key={i} fill={COLORS[d.name as User]} />
                   ))}
                 </Pie>
@@ -158,30 +155,24 @@ const ExpensesSummary: React.FC = () => {
 
         <Separator my="5" />
 
-        {/* Bar Chart: Unpaid Loans */}
-        <Card
-          style={{
-            padding: 16,
-            borderRadius: 18,
-            backgroundColor: "white",
-          }}
-        >
+        {/* LOANS BAR */}
+        <Card style={{ padding: 16, borderRadius: 18 }}>
           <Heading size="4" mb="2">
-            Loans Breakdown 🧾
+            Pending Loans 🧾
           </Heading>
           <Text size="2" color="gray" mb="3">
-            Pending borrowed amounts per person
+            Amount still to be paid
           </Text>
 
           <Box style={{ width: "100%", height: 260 }}>
             <ResponsiveContainer>
-              <BarChart data={loanData}>
+              <BarChart data={loanBarData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="value">
-                  {loanData.map((d, i) => (
+                  {loanBarData.map((d, i) => (
                     <Cell key={i} fill={COLORS[d.name as User]} />
                   ))}
                 </Bar>
@@ -192,19 +183,19 @@ const ExpensesSummary: React.FC = () => {
 
         <Separator my="5" />
 
-        {/* Settlement */}
+        {/* SETTLEMENT */}
         <Card
           style={{
             padding: 18,
             borderRadius: 18,
-            backgroundColor: "black",
+            backgroundColor: "#000",
             color: "white",
           }}
         >
           <Heading size="4" mb="2">
             Settle Up
           </Heading>
-          <Text size="2">{totals.whoOwes}</Text>
+          <Text size="3">{summary.settleText}</Text>
         </Card>
       </Box>
     </Box>

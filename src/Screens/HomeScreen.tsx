@@ -10,7 +10,7 @@ import {
   Separator,
 } from "@radix-ui/themes";
 import { useNavigate } from "react-router-dom";
-import { Flame, WalletCards } from "lucide-react";
+import { Flame, WalletCards, Receipt } from "lucide-react";
 
 // Swiper
 import "swiper/css";
@@ -18,7 +18,7 @@ import "swiper/css/pagination";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
 
-// Banner Images
+// Assets
 import Banner1 from "../assets/images/Banner1.jpg";
 import Banner2 from "../assets/images/Banner2.jpg";
 import Banner3 from "../assets/images/Banner3.jpg";
@@ -44,12 +44,14 @@ const FOOD_ITEMS = [
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
+
   const totalCalories = CALORIE_BREAKDOWN.reduce(
-    (s, i) => s + i.calories,
+    (sum, i) => sum + i.calories,
     0
   );
 
-  const bg = "radial-gradient(circle at top left,#e6f9f4,#f7efff 40%,#edf7ff 100%)";
+  const bg =
+    "radial-gradient(circle at top left,#e6f9f4,#f7efff 40%,#edf7ff 100%)";
 
   return (
     <Box
@@ -73,7 +75,7 @@ const HomeScreen: React.FC = () => {
           zIndex: 50,
         }}
       >
-        {/* Left: Logo + Name */}
+        {/* Logo */}
         <Flex align="center" gap="10px">
           <img
             src={Logo}
@@ -86,33 +88,26 @@ const HomeScreen: React.FC = () => {
             }}
           />
           <Box>
-            <Text
-              size="4"
-              weight="bold"
-              style={{ color: "#111827" }}
-            >
+            <Text size="4" weight="bold" style={{ color: "#111827" }}>
               NutriSpend
             </Text>
-            <Text
-              size="1"
-              style={{ color: "#6b7280" }}
-            >
-              Start Tracking Your Calories
+            <Text size="1" style={{ color: "#6b7280" }}>
+              Track Calories & Money
             </Text>
           </Box>
         </Flex>
 
-        {/* Right: Buttons */}
+        {/* NAV ACTIONS */}
         <Flex align="center" gap="8px">
           <Button
             size="2"
             onClick={() => navigate("/calories")}
             style={{
               borderRadius: 999,
-              paddingInline: 14,
               background: "#16a34a",
               color: "white",
               fontWeight: 600,
+              border: "none",
             }}
           >
             Calories
@@ -120,13 +115,28 @@ const HomeScreen: React.FC = () => {
 
           <Button
             size="2"
-            onClick={() => navigate("/expenses")}
+            onClick={() => navigate("/wallet")}
             style={{
               borderRadius: 999,
-              paddingInline: 14,
               background: "#4f46e5",
               color: "white",
               fontWeight: 600,
+              border: "none",
+            }}
+          >
+            Wallet
+          </Button>
+
+          {/* FIXED EXPENSES BUTTON */}
+          <Button
+            size="2"
+            onClick={() => navigate("/expenses")}
+            style={{
+              borderRadius: 999,
+              background: "#b80404ff",
+              color: "white",
+              fontWeight: 600,
+              border: "none",
             }}
           >
             Expenses
@@ -135,15 +145,8 @@ const HomeScreen: React.FC = () => {
       </Flex>
 
       {/* MAIN CONTENT */}
-      <Box
-        px="4"
-        py="5"
-        style={{
-          maxWidth: 1120,
-          margin: "0 auto",
-        }}
-      >
-        {/* Banner Carousel */}
+      <Box px="4" py="5" style={{ maxWidth: 1120, margin: "0 auto" }}>
+        {/* BANNER */}
         <Box mb="6">
           <Swiper
             modules={[Autoplay, Pagination]}
@@ -172,13 +175,8 @@ const HomeScreen: React.FC = () => {
           </Swiper>
         </Box>
 
-        {/* BIG ACTION BUTTONS BELOW BANNER */}
-        <Flex
-          gap="14px"
-          justify="center"
-          mb="24px"
-          wrap="wrap"
-        >
+        {/* PRIMARY ACTIONS */}
+        <Flex gap="14px" justify="center" wrap="wrap" mb="24px">
           <Button
             size="4"
             onClick={() => navigate("/calories")}
@@ -187,9 +185,9 @@ const HomeScreen: React.FC = () => {
               color: "white",
               fontWeight: 600,
               borderRadius: 16,
-              paddingInline: 26,
               minWidth: 180,
               height: 50,
+              border: "none",
             }}
           >
             <Flame size={22} style={{ marginRight: 8 }} /> Calories
@@ -197,48 +195,50 @@ const HomeScreen: React.FC = () => {
 
           <Button
             size="4"
-            onClick={() => navigate("/expenses")}
+            onClick={() => navigate("/wallet")}
             style={{
               background: "#4f46e5",
               color: "white",
               fontWeight: 600,
               borderRadius: 16,
-              paddingInline: 26,
               minWidth: 180,
               height: 50,
+              border: "none",
             }}
           >
-            <WalletCards size={22} style={{ marginRight: 8 }} /> Expenses
+            <WalletCards size={22} style={{ marginRight: 8 }} /> Wallet
+          </Button>
+
+          {/* FIXED BIG EXPENSES BUTTON */}
+          <Button
+            size="4"
+            onClick={() => navigate("/expenses")}
+            style={{
+              background: "#b80404ff",
+              color: "white",
+              borderRadius: 16,
+              minWidth: 180,
+              height: 50,
+              fontWeight: 600,
+              border: "none",
+            }}
+          >
+            <Receipt size={22} style={{ marginRight: 8 }} /> Expenses
           </Button>
         </Flex>
 
         <Separator my="4" />
 
-        {/* Calorie Breakdown */}
-        <Heading
-          size="4"
-          mb="3"
-          style={{ color: "#111827" }}
-        >
+        {/* CALORIE BREAKDOWN */}
+        <Heading size="4" mb="3">
           🍽️ Daily Calorie Breakdown
         </Heading>
 
-        <Card
-          style={{
-            borderRadius: 20,
-            padding: 20,
-            background: "#ffffff",
-          }}
-        >
+        <Card style={{ borderRadius: 20, padding: 20 }}>
           {CALORIE_BREAKDOWN.map((i) => (
-            <Box key={i.label} style={{ marginBottom: 18 }}>
+            <Box key={i.label} mb="4">
               <Flex justify="between" mb="1">
-                <Text
-                  weight="bold"
-                  style={{ color: "#1f2933" }}
-                >
-                  {i.label}
-                </Text>
+                <Text weight="bold">{i.label}</Text>
                 <Text color="gray">{i.calories} cal</Text>
               </Flex>
               <Box
@@ -247,14 +247,14 @@ const HomeScreen: React.FC = () => {
                   width: "100%",
                   borderRadius: 999,
                   background: "#e5e7eb",
-                  overflow: "hidden",
                 }}
               >
                 <Box
                   style={{
                     width: `${(i.calories / totalCalories) * 100}%`,
                     height: "100%",
-                    backgroundColor: i.color,
+                    background: i.color,
+                    borderRadius: 999,
                   }}
                 />
               </Box>
@@ -264,42 +264,29 @@ const HomeScreen: React.FC = () => {
 
         <Separator my="5" />
 
-        {/* Food Cards */}
-        <Heading
-          size="4"
-          mb="3"
-          style={{ color: "#111827" }}
-        >
+        {/* FOOD CARDS */}
+        <Heading size="4" mb="3">
           🍔 Food Calories (per 100g)
         </Heading>
 
-        <Grid
-          columns={{ initial: "2", sm: "3", md: "4" }}
-          gap="4"
-        >
+        <Grid columns={{ initial: "2", sm: "3", md: "4" }} gap="4">
           {FOOD_ITEMS.map((i) => (
             <Card
               key={i.name}
               style={{
-                padding: "18px 12px",
+                padding: 18,
                 borderRadius: 18,
                 textAlign: "center",
-                background: "#ffffff",
               }}
             >
               <Text size="7">{i.emoji}</Text>
-              <Text
-                weight="bold"
-                style={{ marginTop: 8, color: "#111827" }}
-              >
-                {i.name}
-              </Text>
+              <Text weight="bold">{i.name}</Text>
               <Text color="gray">{i.cal} cal</Text>
             </Card>
           ))}
         </Grid>
 
-        {/* Tip Box */}
+        {/* TIP */}
         <Card
           style={{
             marginTop: 28,
@@ -310,8 +297,8 @@ const HomeScreen: React.FC = () => {
             fontWeight: 500,
           }}
         >
-          🌱 Small steps → Big progress. Track daily to improve both{" "}
-          <b>health</b> & <b>spending</b>! 💸
+          🌱 Track calories for health & wallet for money — simple habits,
+          big results 💚
         </Card>
       </Box>
     </Box>
