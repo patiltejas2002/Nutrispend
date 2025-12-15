@@ -38,7 +38,11 @@ const saveEntries = (arr: Entry[]) =>
 const ExpensesScreen: React.FC = () => {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState<Person>("Tejas");
+  // ✅ FIX: READ DEFAULT USER FROM HOME
+  const [user, setUser] = useState<Person>(
+    (localStorage.getItem("activeUser") as Person) || "Tejas"
+  );
+
   const [items, setItems] = useState<Entry[]>([]);
 
   // 🎨 THEME
@@ -143,7 +147,10 @@ const ExpensesScreen: React.FC = () => {
           {(["Tejas", "Nikita"] as Person[]).map((p) => (
             <Button
               key={p}
-              onClick={() => setUser(p)}
+              onClick={() => {
+                setUser(p);
+                localStorage.setItem("activeUser", p); // ✅ SYNC WITH HOME
+              }}
               style={{
                 flex: 1,
                 borderRadius: 999,

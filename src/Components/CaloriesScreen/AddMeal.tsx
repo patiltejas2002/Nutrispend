@@ -7,6 +7,7 @@ import FoodData from "../../assets/foodData.json";
 
 const USERS = ["Tejas", "Nikita"] as const;
 type User = (typeof USERS)[number];
+
 const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snacks"] as const;
 type MealType = (typeof MEAL_TYPES)[number];
 
@@ -27,189 +28,183 @@ const AddMeal: React.FC = () => {
   const editId = searchParams.get("edit");
   const isEditing = !!editId;
 
-  const [editingMeal, setEditingMeal] = useState<any>(null);
+  // ✅ DEFAULT USER FROM HOME
+  const [selectedUser, setSelectedUser] = useState<User>(
+    (localStorage.getItem("activeUser") as User) || "Tejas"
+  );
 
-  // Toast state
-  const [showToast, setShowToast] = useState(false);
+  const theme =
+    selectedUser === "Tejas"
+      ? { main: "#4A90E2", soft: "#e0f2fe", shadow: "#4A90E266" }
+      : { main: "#FC4986", soft: "#fce7f3", shadow: "#FC498666" };
 
-  const [selectedUser, setSelectedUser] = useState<User>("Tejas");
   const [selectedDate, setSelectedDate] = useState(getDate());
   const [mealType, setMealType] = useState<MealType | "">("");
-
   const [search, setSearch] = useState("");
   const [food, setFood] = useState("");
   const [quantity, setQuantity] = useState("1");
 
+  const [manualCalories, setManualCalories] = useState("");
+  const [isManual, setIsManual] = useState(false);
+
+  const [showToast, setShowToast] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  const savedRecent =
-    JSON.parse(localStorage.getItem("recentFoods") || "[]") || [];
-  const [recentFoods, setRecentFoods] = useState<string[]>(savedRecent);
+  const filteredFoods =
+    search && !isManual
+      ? foodOptions.filter((f) =>
+          f.toLowerCase().includes(search.toLowerCase())
+        )
+      : [];
 
-  const filteredFoods = search
-    ? foodOptions.filter((f) => f.toLowerCase().includes(search.toLowerCase()))
-    : [];
-
-  const calories =
-    food && quantity ? (FoodData as any)[food] * Number(quantity) : 0;
+  const calories = isManual
+    ? Number(manualCalories || 0) * Number(quantity || 1)
+    : food
+    ? (FoodData as any)[food] * Number(quantity || 1)
+    : 0;
 
   const handleSelectFood = (f: string) => {
     setFood(f);
     setSearch(f);
+    setIsManual(false);
+    setManualCalories("");
+  };
 
-    const updated = [f, ...recentFoods.filter((item) => item !== f)].slice(0, 5);
-    setRecentFoods(updated);
-    localStorage.setItem("recentFoods", JSON.stringify(updated));
+  const enableManual = () => {
+    setIsManual(true);
+    setFood(search);
+    setManualCalories("");
   };
 
   const saveMeal = () => {
-    if (!mealType || !food) {
-      alert("Missing fields");
+    if (!mealType || !food || calories <= 0) {
+      alert("Please fill all required fields");
       return;
     }
 
     const stored = JSON.parse(localStorage.getItem("meals") || "[]");
 
-    if (isEditing && editingMeal) {
-      const updatedMeals = stored.map((m: any) =>
-        m.id === editingMeal.id
-          ? {
-              ...m,
-              user: selectedUser,
-              type: mealType,
-              food,
-              quantity: Number(quantity),
-              calories,
-              date: selectedDate,
-            }
-          : m
-      );
-      localStorage.setItem("meals", JSON.stringify(updatedMeals));
-    } else {
-      stored.push({
-        id: Date.now(),
-        user: selectedUser,
-        type: mealType,
-        food,
-        quantity: Number(quantity),
-        calories,
-        date: selectedDate,
-      });
-      localStorage.setItem("meals", JSON.stringify(stored));
-    }
+    const meal = {
+      id: isEditing ? Number(editId) : Date.now(),
+      user: selectedUser,
+      type: mealType,
+      food,
+      quantity: Number(quantity),
+      calories,
+      date: selectedDate,
+    };
 
-    // Show toast
+    const updated = isEditing
+      ? stored.map((m: any) => (m.id === meal.id ? meal : m))
+      : [...stored, meal];
+
+    localStorage.setItem("meals", JSON.stringify(updated));
+
     setShowToast(true);
     setTimeout(() => {
       setShowToast(false);
       navigate("/calories");
-    }, 1000);
+    }, 900);
   };
 
+  // Scroll search list
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTo(0, 0);
-  }, [food, search]);
+  }, [search]);
 
+  // ✅ EDIT MODE PREFILL (OVERRIDES activeUser)
   useEffect(() => {
     if (isEditing && editId) {
       const stored = JSON.parse(localStorage.getItem("meals") || "[]");
       const meal = stored.find((m: any) => m.id === Number(editId));
+
       if (meal) {
-        setEditingMeal(meal);
         setSelectedUser(meal.user);
         setSelectedDate(meal.date);
         setMealType(meal.type);
         setFood(meal.food);
         setSearch(meal.food);
         setQuantity(meal.quantity.toString());
+        setManualCalories(
+          meal.food in FoodData ? "" : meal.calories.toString()
+        );
+        setIsManual(!(meal.food in FoodData));
       }
     }
-  }, [isEditing, editId]);
+  }, []);
 
   return (
     <Box
       style={{
         minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
         padding: "24px 18px",
-        background: "linear-gradient(120deg,#dcfce7,#f3e8ff,#e0f2fe)",
+        background: `linear-gradient(120deg,${theme.soft},#ffffff)`,
       }}
     >
-      {/* Header */}
-      <Flex align="center" gap="3" mb="28px">
+      {/* HEADER */}
+      <Flex align="center" gap="3" mb="24px">
         <Button variant="soft" onClick={() => navigate("/calories")}>
           <ArrowLeft />
         </Button>
         <Heading size="6">{isEditing ? "Edit Meal" : "Add Meal"}</Heading>
       </Flex>
 
-      {/* WHO */}
-      <Text size="3" weight="bold" mb="6px">
-        Who’s eating?
-      </Text>
-
+      {/* USER */}
+      <Text weight="bold">Who’s eating?</Text>
       <Flex gap="10px" mb="22px">
-        {USERS.map((u) => {
-          const isActive = selectedUser === u;
-          const color = u === "Tejas" ? "#4A90E2" : "#FC4986";
-          const colorSoft = u === "Tejas" ? "#3B7FCC" : "#E33B78";
-
-          return (
-            <Button
-              key={u}
-              onClick={() => setSelectedUser(u)}
-              style={{
-                flex: 1,
-                borderRadius: "20px",
-                background: isActive ? color : "#e5e7eb",
-                color: isActive ? "white" : "#333",
-                border: isActive
-                  ? `2px solid ${colorSoft}`
+        {USERS.map((u) => (
+          <Button
+            key={u}
+            onClick={() => {
+              setSelectedUser(u);
+              localStorage.setItem("activeUser", u);
+            }}
+            style={{
+              flex: 1,
+              borderRadius: 20,
+              background: selectedUser === u ? theme.main : "#e5e7eb",
+              color: selectedUser === u ? "white" : "#333",
+              border:
+                selectedUser === u
+                  ? `2px solid ${theme.main}`
                   : "2px solid transparent",
-                boxShadow: isActive ? `0px 4px 12px ${color}66` : "none",
-              }}
-            >
-              {u}
-            </Button>
-          );
-        })}
+              boxShadow:
+                selectedUser === u ? `0 4px 12px ${theme.shadow}` : "none",
+              fontWeight: 700,
+            }}
+          >
+            {u}
+          </Button>
+        ))}
       </Flex>
 
-      {/* Date */}
-      <Text size="3" weight="bold" mb="6px">
-        Date
-      </Text>
-
+      {/* DATE */}
+      <Text weight="bold">Date</Text>
       <input
         type="date"
         value={selectedDate}
         onChange={(e) => setSelectedDate(e.target.value)}
         style={{
-          padding: "14px",
-          fontSize: "16px",
-          borderRadius: "16px",
           width: "100%",
-          marginBottom: "26px",
+          padding: 14,
+          borderRadius: 16,
+          marginBottom: 20,
           border: "none",
           boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         }}
       />
 
-      {/* Meal Type */}
-      <Text size="3" weight="bold" mb="6px">
-        Meal Type
-      </Text>
-
-      <Flex gap="10px" mb="24px" wrap="wrap">
+      {/* MEAL TYPE */}
+      <Text weight="bold">Meal Type</Text>
+      <Flex gap="10px" wrap="wrap" mb="20px">
         {MEAL_TYPES.map((m) => (
           <Button
             key={m}
             onClick={() => setMealType(m)}
             style={{
               flex: "1 1 48%",
-              height: "50px",
-              borderRadius: "16px",
+              height: 48,
+              borderRadius: 16,
               background: mealType === m ? "#22c55e" : "#e5e7eb",
               color: mealType === m ? "white" : "#333",
             }}
@@ -219,97 +214,110 @@ const AddMeal: React.FC = () => {
         ))}
       </Flex>
 
-      {/* Search food */}
-      <Text size="3" weight="bold" mb="8px">
-        Search Food
-      </Text>
-
+      {/* FOOD SEARCH */}
+      <Text weight="bold">Food</Text>
       <input
-        placeholder="Rice, egg, bread..."
+        placeholder="Search or type food name..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         style={{
           width: "100%",
-          padding: "14px",
-          borderRadius: "16px",
-          marginBottom: "12px",
+          padding: 14,
+          borderRadius: 16,
+          marginBottom: 12,
           border: "none",
           boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         }}
       />
 
       {/* FOOD LIST */}
-      <Box
-        ref={scrollRef}
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          background: "rgba(255,255,255,0.8)",
-          borderRadius: "16px",
-          padding: "10px",
-          marginBottom: "22px",
-        }}
-      >
-        {filteredFoods.map((f) => (
-          <Box
-            key={f}
-            onClick={() => handleSelectFood(f)}
-            style={{
-              padding: "12px 14px",
-              marginBottom: "8px",
-              borderRadius: "12px",
-              cursor: "pointer",
-              fontWeight: 500,
-              background: food === f ? "#4A90E2" : "white",
-              color: food === f ? "white" : "#222",
-              boxShadow: "0 1px 5px rgba(0,0,0,0.05)",
-            }}
-          >
-            {f} — {(FoodData as any)[f]} cal
-          </Box>
-        ))}
-      </Box>
+      {!isManual && filteredFoods.length > 0 && (
+        <Box
+          ref={scrollRef}
+          style={{
+            maxHeight: 180,
+            overflowY: "auto",
+            background: "white",
+            borderRadius: 14,
+            padding: 10,
+            marginBottom: 10,
+          }}
+        >
+          {filteredFoods.map((f) => (
+            <Box
+              key={f}
+              onClick={() => handleSelectFood(f)}
+              style={{
+                padding: 10,
+                cursor: "pointer",
+                borderRadius: 10,
+              }}
+            >
+              {f} — {(FoodData as any)[f]} kcal
+            </Box>
+          ))}
+        </Box>
+      )}
 
-      {/* Quantity + Calories */}
-      <Flex justify="between" mb="14px" align="center">
+      {/* MANUAL OPTION */}
+      {search && filteredFoods.length === 0 && !isManual && (
+        <Button variant="outline" onClick={enableManual} mb="14px">
+          Add "{search}" manually
+        </Button>
+      )}
+
+      {/* MANUAL CALORIES */}
+      {isManual && (
+        <input
+          placeholder="Calories per serving"
+          type="number"
+          value={manualCalories}
+          onChange={(e) => setManualCalories(e.target.value)}
+          style={{
+            width: "100%",
+            padding: 14,
+            borderRadius: 16,
+            marginBottom: 16,
+            border: "none",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+          }}
+        />
+      )}
+
+      {/* QTY + CALORIES */}
+      <Flex justify="between" align="center" mb="16px">
         <input
           type="number"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           style={{
-            width: "80px",
-            padding: "10px",
-            fontSize: "18px",
-            fontWeight: 600,
-            borderRadius: "12px",
+            width: 80,
+            padding: 10,
+            borderRadius: 12,
             textAlign: "center",
+            fontWeight: 600,
             border: "none",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
           }}
         />
-
-        <Text weight="bold" style={{ fontSize: "19px" }}>
-          🔥 {calories} kcal
-        </Text>
+        <Text weight="bold">🔥 {calories} kcal</Text>
       </Flex>
 
-      {/* Save */}
+      {/* SAVE */}
       <Button
         onClick={saveMeal}
         style={{
           width: "100%",
-          height: "45px",
-          borderRadius: "24px",
-          backgroundColor: "#229e46",
+          height: 48,
+          borderRadius: 24,
+          background: "#16a34a",
           color: "white",
-          fontSize: "18px",
           fontWeight: 700,
         }}
       >
         Save Meal
       </Button>
 
-      {/* Toast */}
+      {/* TOAST */}
       {showToast && (
         <Box
           style={{
@@ -319,9 +327,8 @@ const AddMeal: React.FC = () => {
             transform: "translateX(-50%)",
             background: "#111",
             color: "white",
-            padding: "12px 20px",
-            borderRadius: "16px",
-            boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+            padding: "12px 16px",
+            borderRadius: 16,
             fontWeight: 600,
           }}
         >

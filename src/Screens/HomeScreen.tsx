@@ -1,8 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Flex,
-  Grid,
   Card,
   Text,
   Heading,
@@ -24,6 +23,9 @@ import Banner2 from "../assets/images/Banner2.jpg";
 import Banner3 from "../assets/images/Banner3.jpg";
 import Logo from "../assets/images/logo.png";
 
+type User = "Tejas" | "Nikita";
+const USERS: User[] = ["Tejas", "Nikita"];
+
 const CALORIE_BREAKDOWN = [
   { label: "Breakfast", calories: 350, color: "#FF6363" },
   { label: "Lunch", calories: 600, color: "#FFB300" },
@@ -31,43 +33,48 @@ const CALORIE_BREAKDOWN = [
   { label: "Dinner", calories: 450, color: "#577590" },
 ];
 
-const FOOD_ITEMS = [
-  { emoji: "🍳", name: "Eggs", cal: 155 },
-  { emoji: "🍌", name: "Banana", cal: 89 },
-  { emoji: "🍚", name: "Rice", cal: 130 },
-  { emoji: "🍞", name: "Bread", cal: 265 },
-  { emoji: "🍗", name: "Chicken", cal: 239 },
-  { emoji: "🍎", name: "Apple", cal: 52 },
-  { emoji: "🥜", name: "Peanuts", cal: 567 },
-  { emoji: "🍔", name: "Burger", cal: 295 },
-];
-
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
+
+  const getInitialUser = (): User => {
+    const saved = localStorage.getItem("activeUser") as User;
+    return saved && USERS.includes(saved) ? saved : "Tejas";
+  };
+
+  const [selectedUser, setSelectedUser] = useState<User>(getInitialUser);
+
+  const handleUserChange = (user: User) => {
+    setSelectedUser(user);
+    localStorage.setItem("activeUser", user);
+  };
+
+  const theme =
+    selectedUser === "Tejas"
+      ? { main: "#4A90E2", soft: "#e0f2fe", shadow: "rgba(74,144,226,0.3)" }
+      : { main: "#ec4899", soft: "#fce7f3", shadow: "rgba(236,72,153,0.3)" };
+
+  const bg = `radial-gradient(circle at top left,${theme.soft},#f7efff 40%,#edf7ff 100%)`;
 
   const totalCalories = CALORIE_BREAKDOWN.reduce(
     (sum, i) => sum + i.calories,
     0
   );
 
-  const bg =
-    "radial-gradient(circle at top left,#e6f9f4,#f7efff 40%,#edf7ff 100%)";
-
   return (
     <Box
       style={{
         minHeight: "100vh",
         background: bg,
-        color: "#020617",
+        paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
       {/* NAVBAR */}
       <Flex
         align="center"
         justify="between"
-        px="5"
-        py="3"
         style={{
+          padding: "12px 16px",
+          paddingTop: "calc(env(safe-area-inset-top) + 12px)",
           background: "#ffffff",
           borderBottom: "1px solid rgba(148,163,184,0.35)",
           position: "sticky",
@@ -75,87 +82,77 @@ const HomeScreen: React.FC = () => {
           zIndex: 50,
         }}
       >
-        {/* Logo */}
         <Flex align="center" gap="10px">
           <img
             src={Logo}
-            alt="NutriSpend Logo"
+            alt="NutriSpend"
             style={{
-              width: 38,
-              height: 38,
+              width: 36,
+              height: 36,
               borderRadius: 10,
               objectFit: "cover",
             }}
           />
           <Box>
-            <Text size="4" weight="bold" style={{ color: "#111827" }}>
+            <Text size="4" weight="bold">
               NutriSpend
             </Text>
-            <Text size="1" style={{ color: "#6b7280" }}>
-              Track Calories & Money
+            <Text size="1" color="gray">
+              Calories & Expenses
             </Text>
           </Box>
         </Flex>
-
-        {/* NAV ACTIONS */}
-        <Flex align="center" gap="8px">
-          <Button
-            size="2"
-            onClick={() => navigate("/calories")}
-            style={{
-              borderRadius: 999,
-              background: "#16a34a",
-              color: "white",
-              fontWeight: 600,
-              border: "none",
-            }}
-          >
-            Calories
-          </Button>
-
-          <Button
-            size="2"
-            onClick={() => navigate("/wallet")}
-            style={{
-              borderRadius: 999,
-              background: "#4f46e5",
-              color: "white",
-              fontWeight: 600,
-              border: "none",
-            }}
-          >
-            Wallet
-          </Button>
-
-          {/* FIXED EXPENSES BUTTON */}
-          <Button
-            size="2"
-            onClick={() => navigate("/expenses")}
-            style={{
-              borderRadius: 999,
-              background: "#b80404ff",
-              color: "white",
-              fontWeight: 600,
-              border: "none",
-            }}
-          >
-            Expenses
-          </Button>
-        </Flex>
       </Flex>
 
-      {/* MAIN CONTENT */}
-      <Box px="4" py="5" style={{ maxWidth: 1120, margin: "0 auto" }}>
+      {/* MAIN */}
+      <Box
+        style={{
+          maxWidth: 1120,
+          margin: "0 auto",
+          padding: "18px 16px",
+        }}
+      >
+        {/* USER SWITCH */}
+        <Box mb="22px">
+          <Text size="2" weight="bold" align="center" mb="10px">
+            Active User
+          </Text>
+
+          <Flex gap="12px" justify="center">
+            {USERS.map((u) => (
+              <Button
+                key={u}
+                onClick={() => handleUserChange(u)}
+                style={{
+                  flex: 1,
+                  maxWidth: 140,
+                  borderRadius: 999,
+                  height: 44,
+                  background: selectedUser === u ? theme.main : "#e5e7eb",
+                  color: selectedUser === u ? "white" : "#333",
+                  fontWeight: 700,
+                  boxShadow:
+                    selectedUser === u
+                      ? `0 6px 16px ${theme.shadow}`
+                      : "none",
+                }}
+              >
+                {u}
+              </Button>
+            ))}
+          </Flex>
+        </Box>
+
         {/* BANNER */}
-        <Box mb="6">
+        <Box mb="22px">
           <Swiper
             modules={[Autoplay, Pagination]}
-            autoplay={{ delay: 2800 }}
+            autoplay={{ delay: 3000 }}
             loop
             pagination={{ clickable: true }}
             style={{
-              height: 260,
-              borderRadius: 20,
+              height: 220,
+              borderRadius: 18,
               overflow: "hidden",
             }}
           >
@@ -176,54 +173,51 @@ const HomeScreen: React.FC = () => {
         </Box>
 
         {/* PRIMARY ACTIONS */}
-        <Flex gap="14px" justify="center" wrap="wrap" mb="24px">
+        <Flex
+          gap="12px"
+          direction={{ initial: "column", sm: "row" }}
+          mb="26px"
+        >
           <Button
-            size="4"
             onClick={() => navigate("/calories")}
             style={{
+              flex: 1,
+              height: 52,
               background: "#16a34a",
               color: "white",
-              fontWeight: 600,
               borderRadius: 16,
-              minWidth: 180,
-              height: 50,
-              border: "none",
+              fontWeight: 600,
             }}
           >
-            <Flame size={22} style={{ marginRight: 8 }} /> Calories
+            <Flame size={20} style={{ marginRight: 6 }} /> Calories
           </Button>
 
           <Button
-            size="4"
             onClick={() => navigate("/wallet")}
             style={{
+              flex: 1,
+              height: 52,
               background: "#4f46e5",
               color: "white",
-              fontWeight: 600,
               borderRadius: 16,
-              minWidth: 180,
-              height: 50,
-              border: "none",
+              fontWeight: 600,
             }}
           >
-            <WalletCards size={22} style={{ marginRight: 8 }} /> Wallet
+            <WalletCards size={20} style={{ marginRight: 6 }} /> Wallet
           </Button>
 
-          {/* FIXED BIG EXPENSES BUTTON */}
           <Button
-            size="4"
             onClick={() => navigate("/expenses")}
             style={{
+              flex: 1,
+              height: 52,
               background: "#b80404ff",
               color: "white",
               borderRadius: 16,
-              minWidth: 180,
-              height: 50,
               fontWeight: 600,
-              border: "none",
             }}
           >
-            <Receipt size={22} style={{ marginRight: 8 }} /> Expenses
+            <Receipt size={20} style={{ marginRight: 6 }} /> Expenses
           </Button>
         </Flex>
 
@@ -234,19 +228,19 @@ const HomeScreen: React.FC = () => {
           🍽️ Daily Calorie Breakdown
         </Heading>
 
-        <Card style={{ borderRadius: 20, padding: 20 }}>
+        <Card style={{ borderRadius: 18, padding: 18 }}>
           {CALORIE_BREAKDOWN.map((i) => (
-            <Box key={i.label} mb="4">
-              <Flex justify="between" mb="1">
+            <Box key={i.label} mb="14px">
+              <Flex justify="between" mb="4px">
                 <Text weight="bold">{i.label}</Text>
                 <Text color="gray">{i.calories} cal</Text>
               </Flex>
+
               <Box
                 style={{
-                  height: 11,
-                  width: "100%",
-                  borderRadius: 999,
+                  height: 10,
                   background: "#e5e7eb",
+                  borderRadius: 999,
                 }}
               >
                 <Box
@@ -260,45 +254,6 @@ const HomeScreen: React.FC = () => {
               </Box>
             </Box>
           ))}
-        </Card>
-
-        <Separator my="5" />
-
-        {/* FOOD CARDS */}
-        <Heading size="4" mb="3">
-          🍔 Food Calories (per 100g)
-        </Heading>
-
-        <Grid columns={{ initial: "2", sm: "3", md: "4" }} gap="4">
-          {FOOD_ITEMS.map((i) => (
-            <Card
-              key={i.name}
-              style={{
-                padding: 18,
-                borderRadius: 18,
-                textAlign: "center",
-              }}
-            >
-              <Text size="7">{i.emoji}</Text>
-              <Text weight="bold">{i.name}</Text>
-              <Text color="gray">{i.cal} cal</Text>
-            </Card>
-          ))}
-        </Grid>
-
-        {/* TIP */}
-        <Card
-          style={{
-            marginTop: 28,
-            padding: 18,
-            borderRadius: 18,
-            background: "#dcfce7",
-            textAlign: "center",
-            fontWeight: 500,
-          }}
-        >
-          🌱 Track calories for health & wallet for money — simple habits,
-          big results 💚
         </Card>
       </Box>
     </Box>

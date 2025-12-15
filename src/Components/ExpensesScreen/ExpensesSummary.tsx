@@ -47,6 +47,16 @@ const COLORS: Record<User, string> = {
 
 const ExpensesSummary: React.FC = () => {
   const navigate = useNavigate();
+
+  // ✅ ACTIVE USER (for theme only)
+  const activeUser =
+    (localStorage.getItem("activeUser") as User) || "Tejas";
+
+  const theme =
+    activeUser === "Tejas"
+      ? { main: "#4A90E2", soft: "#e0f2fe" }
+      : { main: "#ec4899", soft: "#fce7f3" };
+
   const items = useMemo(loadFromStorage, []);
 
   const summary = useMemo(() => {
@@ -61,20 +71,19 @@ const ExpensesSummary: React.FC = () => {
     };
 
     items.forEach((i) => {
-      // ✅ EXPENSES → split equally
+      // EXPENSE → split equally
       if (i.type === "EXPENSE") {
         const share = i.amount / 2;
         totalExpenses[i.paidBy] += share;
         totalExpenses[i.otherPerson] += share;
       }
 
-      // ✅ LOANS → otherPerson owes paidBy
+      // LOAN → otherPerson owes paidBy
       if (i.type === "LOAN" && !i.settled) {
         totalLoansUnpaid[i.otherPerson] += i.amount;
       }
     });
 
-    // Settlement calculation
     let settleText = "You are settled up 🎉";
     const diff = totalLoansUnpaid.Tejas - totalLoansUnpaid.Nikita;
 
@@ -84,11 +93,7 @@ const ExpensesSummary: React.FC = () => {
       settleText = `Nikita owes Tejas ₹${Math.abs(diff).toFixed(2)}`;
     }
 
-    return {
-      totalExpenses,
-      totalLoansUnpaid,
-      settleText,
-    };
+    return { totalExpenses, totalLoansUnpaid, settleText };
   }, [items]);
 
   const expensePieData = (["Tejas", "Nikita"] as User[]).map((u) => ({
@@ -106,7 +111,7 @@ const ExpensesSummary: React.FC = () => {
       style={{
         minHeight: "100vh",
         padding: "24px 20px",
-        background: "linear-gradient(120deg,#dcfce7,#f3e8ff,#e0f2fe)",
+        background: `linear-gradient(120deg,${theme.soft},#ffffff)`,
       }}
     >
       <Box style={{ maxWidth: 820, margin: "0 auto" }}>
@@ -119,7 +124,9 @@ const ExpensesSummary: React.FC = () => {
           >
             <ArrowLeft />
           </Button>
-          <Heading size="6">Expenses Summary</Heading>
+          <Heading size="6">
+            Expenses Summary — {activeUser}
+          </Heading>
         </Flex>
 
         {/* EXPENSE PIE */}
@@ -144,7 +151,13 @@ const ExpensesSummary: React.FC = () => {
                   }
                 >
                   {expensePieData.map((d, i) => (
-                    <Cell key={i} fill={COLORS[d.name as User]} />
+                    <Cell
+                      key={i}
+                      fill={COLORS[d.name as User]}
+                      opacity={
+                        d.name === activeUser ? 1 : 0.55
+                      }
+                    />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -173,7 +186,13 @@ const ExpensesSummary: React.FC = () => {
                 <Tooltip />
                 <Bar dataKey="value">
                   {loanBarData.map((d, i) => (
-                    <Cell key={i} fill={COLORS[d.name as User]} />
+                    <Cell
+                      key={i}
+                      fill={COLORS[d.name as User]}
+                      opacity={
+                        d.name === activeUser ? 1 : 0.55
+                      }
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -188,7 +207,7 @@ const ExpensesSummary: React.FC = () => {
           style={{
             padding: 18,
             borderRadius: 18,
-            backgroundColor: "#000",
+            backgroundColor: theme.main,
             color: "white",
           }}
         >

@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -8,10 +8,9 @@ import {
   Table,
   Text,
   Heading,
-  Separator,
   Card,
+  Badge,
 } from "@radix-ui/themes";
-
 import { ArrowLeft, Trash2, Edit } from "lucide-react";
 import {
   BarChart,
@@ -26,13 +25,6 @@ import {
 const USERS = ["Tejas", "Nikita"] as const;
 type User = (typeof USERS)[number];
 
-const MEAL_TYPES_COLORS: Record<string, string> = {
-  Breakfast: "#FF9F1C",
-  Lunch: "#4A90E2",
-  Dinner: "#16A34A",
-  Snacks: "#C026D3",
-};
-
 type Meal = {
   id: number;
   user: User;
@@ -43,23 +35,38 @@ type Meal = {
   date: string;
 };
 
+const MEAL_COLORS: Record<string, string> = {
+  Breakfast: "#f59e0b",
+  Lunch: "#3b82f6",
+  Dinner: "#16a34a",
+  Snacks: "#a855f7",
+};
+
 const getDate = (daysAgo = 0) =>
   new Date(Date.now() - daysAgo * 86400000).toLocaleDateString("en-CA");
 
 const CaloriesScreen: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedUser, setSelectedUser] = useState<User>("Tejas");
+
+  // ✅ SINGLE SOURCE OF TRUTH
+  const [user, setUser] = useState<User>(
+    (localStorage.getItem("activeUser") as User) || "Tejas"
+  );
+
   const [selectedDate, setSelectedDate] = useState(getDate(0));
   const [meals, setMeals] = useState<Meal[]>([]);
   const [chartOpen, setChartOpen] = useState(false);
 
   const isToday = selectedDate === getDate(0);
 
-  const mainColor = selectedUser === "Tejas" ? "#4A90E2" : "#FC4986";
+  // 🎨 THEME
+  const theme =
+    user === "Tejas"
+      ? { main: "#4A90E2", soft: "#e0f2fe", text: "#1e40af" }
+      : { main: "#ec4899", soft: "#fce7f3", text: "#9d174d" };
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("meals") || "[]");
-    setMeals(stored);
+    setMeals(JSON.parse(localStorage.getItem("meals") || "[]"));
   }, []);
 
   const updateMeals = (arr: Meal[]) => {
@@ -67,8 +74,9 @@ const CaloriesScreen: React.FC = () => {
     localStorage.setItem("meals", JSON.stringify(arr));
   };
 
-  const dailyMeals = meals.filter(
-    (m) => m.user === selectedUser && m.date === selectedDate
+  const dailyMeals = useMemo(
+    () => meals.filter((m) => m.user === user && m.date === selectedDate),
+    [meals, user, selectedDate]
   );
 
   const totalCalories = dailyMeals.reduce((s, m) => s + m.calories, 0);
@@ -77,44 +85,34 @@ const CaloriesScreen: React.FC = () => {
     .map((_, i) => {
       const d = getDate(i);
       const label = i === 0 ? "Today" : i === 1 ? "Yest" : `${i}d ago`;
-      const cals = meals
-        .filter((m) => m.user === selectedUser && m.date === d)
+      const calories = meals
+        .filter((m) => m.user === user && m.date === d)
         .reduce((s, m) => s + m.calories, 0);
-      return { label, calories: cals };
+      return { label, calories };
     })
     .reverse();
 
-  const deleteMeal = (id: number) =>
-    window.confirm("Remove meal?") &&
+  const deleteMeal = (id: number) => {
+    if (!window.confirm("Delete this meal?")) return;
     updateMeals(meals.filter((m) => m.id !== id));
+  };
 
   return (
     <Box
-      className="mobile-padding"
       style={{
         minHeight: "100vh",
         padding: "24px 18px",
-        background: "linear-gradient(125deg,#e7f9ef,#efe9ff,#e4f2ff)",
+        background: `linear-gradient(120deg,${theme.soft},#ffffff)`,
       }}
     >
       <Box style={{ maxWidth: 1100, margin: "0 auto" }}>
-        {/* Header */}
-        <Flex justify="between" align="center" mb="28px">
+        {/* HEADER */}
+        <Flex justify="between" align="center" mb="26px">
           <Flex align="center" gap="10px">
-            <Button
-              variant="soft"
-              onClick={() => navigate("/")}
-              style={{
-                borderRadius: 999,
-                background: "#fff",
-                boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
-              }}
-            >
-              <ArrowLeft size={20} />
+            <Button variant="soft" onClick={() => navigate("/")}>
+              <ArrowLeft />
             </Button>
-            <Heading size="5" style={{ color: "#111" }}>
-              Calories Tracker 🔥
-            </Heading>
+            <Heading size="6">Calories Tracker</Heading>
           </Flex>
 
           <Button
@@ -122,34 +120,30 @@ const CaloriesScreen: React.FC = () => {
             disabled={!isToday}
             style={{
               borderRadius: 999,
-              backgroundColor: isToday ? mainColor : "#9ca3af",
+              backgroundColor: isToday ? theme.main : "#9ca3af",
               color: "white",
-              paddingInline: 18,
               fontWeight: 600,
-              transition: "0.3s",
             }}
           >
             Add Meal
           </Button>
         </Flex>
 
-        <Separator my="3" />
-
-        {/* User */}
-        <Text size="3" weight="bold" mb="10px">
-          Who is eating?
-        </Text>
-        <Flex gap="10px" mb="20px">
+        {/* USER TOGGLE (SYNCED) */}
+        <Flex gap="12px" mb="24px">
           {USERS.map((u) => (
             <Button
               key={u}
-              onClick={() => setSelectedUser(u)}
+              onClick={() => {
+                setUser(u);
+                localStorage.setItem("activeUser", u);
+              }}
               style={{
                 flex: 1,
                 borderRadius: 999,
-                backgroundColor: selectedUser === u ? mainColor : "#e3e3e3",
-                color: selectedUser === u ? "white" : "#333",
-                fontWeight: 600,
+                backgroundColor: user === u ? theme.main : "#f1f5f9",
+                color: user === u ? "white" : "#334155",
+                fontWeight: 700,
               }}
             >
               {u}
@@ -157,11 +151,8 @@ const CaloriesScreen: React.FC = () => {
           ))}
         </Flex>
 
-        {/* Date */}
-        <Text size="3" weight="bold" mb="10px">
-          Select Day 📅
-        </Text>
-        <Flex gap="8px" wrap="wrap" mb="20px">
+        {/* DATE */}
+        <Flex gap="8px" wrap="wrap" mb="24px">
           {[0, 1, 2, 3, 4].map((i) => {
             const d = getDate(i);
             const label = i === 0 ? "Today" : i === 1 ? "Yest" : `${i}d ago`;
@@ -171,8 +162,8 @@ const CaloriesScreen: React.FC = () => {
                 onClick={() => setSelectedDate(d)}
                 style={{
                   borderRadius: 999,
-                  backgroundColor: selectedDate === d ? mainColor : "#e5e7eb",
-                  color: selectedDate === d ? "white" : "#333",
+                  backgroundColor: selectedDate === d ? theme.main : "#e5e7eb",
+                  color: selectedDate === d ? "white" : "#334155",
                 }}
               >
                 {label}
@@ -185,21 +176,21 @@ const CaloriesScreen: React.FC = () => {
               variant="outline"
               onClick={() => setChartOpen(true)}
               style={{
-                borderColor: mainColor,
-                color: mainColor,
                 borderRadius: 999,
+                borderColor: theme.main,
+                color: theme.main,
               }}
             >
-              📊 Weekly
+              Weekly
             </Button>
           )}
         </Flex>
 
-        {/* Table */}
-        <Card style={{ padding: 0, borderRadius: 16, overflow: "hidden" }}>
+        {/* TABLE */}
+        <Card style={{ padding: 0, borderRadius: 20 }}>
           <Table.Root>
             <Table.Header>
-              <Table.Row style={{ background: "#fafafa" }}>
+              <Table.Row>
                 <Table.ColumnHeaderCell>Meal</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Food</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell align="center">Qty</Table.ColumnHeaderCell>
@@ -216,38 +207,51 @@ const CaloriesScreen: React.FC = () => {
               {dailyMeals.length === 0 ? (
                 <Table.Row>
                   <Table.Cell colSpan={5} align="center">
-                    <Text color="gray">No meals added yet</Text>
+                    <Text color="gray">No meals added</Text>
                   </Table.Cell>
                 </Table.Row>
               ) : (
                 dailyMeals.map((m) => (
-                  <Table.Row key={m.id} style={{ background: "white" }}>
-                    <Table.Cell
-                      style={{
-                        color: MEAL_TYPES_COLORS[m.type] || mainColor,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {m.type}
+                  <Table.Row key={m.id}>
+                    <Table.Cell>
+                      <Badge
+                        style={{
+                          backgroundColor:
+                            MEAL_COLORS[m.type] || theme.main,
+                          color: "white",
+                        }}
+                      >
+                        {m.type}
+                      </Badge>
                     </Table.Cell>
+
                     <Table.Cell>{m.food}</Table.Cell>
+
                     <Table.Cell align="center">{m.quantity}</Table.Cell>
-                    <Table.Cell align="center">🔥 {m.calories}</Table.Cell>
+
+                    <Table.Cell align="center">
+                      🔥 <b>{m.calories}</b>
+                    </Table.Cell>
+
                     <Table.Cell align="right">
-                      <Flex gap="1">
+                      <Flex gap="2" justify="end">
                         <Button
+                          size="1"
                           variant="ghost"
-                          onClick={() => navigate(`/add-meal?edit=${m.id}`)}
-                          style={{ color: mainColor }}
+                          onClick={() =>
+                            navigate(`/add-meal?edit=${m.id}`)
+                          }
+                          style={{ color: theme.main }}
                         >
-                          <Edit size={18} />
+                          <Edit size={16} />
                         </Button>
                         <Button
+                          size="1"
                           variant="ghost"
                           onClick={() => deleteMeal(m.id)}
-                          style={{ color: "#d30606ff" }}
+                          style={{ color: "#dc2626" }}
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={16} />
                         </Button>
                       </Flex>
                     </Table.Cell>
@@ -258,71 +262,42 @@ const CaloriesScreen: React.FC = () => {
           </Table.Root>
         </Card>
 
-        {/* Total + Message */}
-        <Flex direction="column" align="end" mt="20px" gap="10px">
-          <Box
+        {/* TOTAL */}
+        <Flex justify="end" mt="24px">
+          <Badge
+            size="3"
             style={{
-              padding: "6px 18px",
-              backgroundColor: totalCalories > 1800 ? "#dc2626" : "#059669",
-              color: "white",
-              borderRadius: 999,
-              fontSize: 16,
-              fontWeight: 700,
-              textAlign: "center",
+              backgroundColor:
+                totalCalories > 1800 ? "#fee2e2" : "#dcfce7",
+              color: totalCalories > 1800 ? "#b91c1c" : "#166534",
+              padding: "8px 16px",
             }}
           >
             Total: {totalCalories} kcal
-          </Box>
-
-          <Box
-            style={{
-              padding: "10px 18px",
-              borderRadius: 12,
-              fontSize: 14,
-              fontWeight: 600,
-              textAlign: "center",
-              backgroundColor: totalCalories > 1800 ? "#fee2e2" : "#dcfce7",
-              color: totalCalories > 1800 ? "#b91c1c" : "#166534",
-            }}
-          >
-            {totalCalories > 1800
-              ? "⚠️ You crossed 1800 kcal! Go lighter next meal."
-              : "✔️ Excellent! You're within a healthy range."}
-          </Box>
+          </Badge>
         </Flex>
       </Box>
 
-      {/* Chart Modal */}
+      {/* WEEKLY CHART */}
       {chartOpen && (
         <Box
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.55)",
+            background: "rgba(0,0,0,0.5)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: 20,
           }}
         >
-          <Box
-            style={{
-              background: "white",
-              borderRadius: 20,
-              padding: 24,
-              width: "90%",
-              maxWidth: 600,
-            }}
-          >
-            <Heading size="4" mb="2">
-              📈 Weekly Calories — {selectedUser}
+          <Card style={{ padding: 24, borderRadius: 20, maxWidth: 600 }}>
+            <Heading size="4" mb="3">
+              Weekly Calories — {user}
             </Heading>
-            <Text color="gray" mb="3">
-              Last 7 days overview
-            </Text>
 
             <Box style={{ height: 260 }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer>
                 <BarChart data={weeklyData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="label" />
@@ -330,8 +305,8 @@ const CaloriesScreen: React.FC = () => {
                   <Tooltip />
                   <Bar
                     dataKey="calories"
-                    fill={mainColor}
-                    radius={[10, 10, 0, 0]}
+                    fill={theme.main}
+                    radius={[8, 8, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -340,7 +315,7 @@ const CaloriesScreen: React.FC = () => {
             <Flex justify="center" mt="3">
               <Button onClick={() => setChartOpen(false)}>Close</Button>
             </Flex>
-          </Box>
+          </Card>
         </Box>
       )}
     </Box>

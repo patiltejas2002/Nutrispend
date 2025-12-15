@@ -47,7 +47,11 @@ const AddExpense: React.FC = () => {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayISO());
-  const [paidBy, setPaidBy] = useState<Person>("Tejas");
+
+  // ✅ FIX: READ DEFAULT USER FROM HOME
+  const [paidBy, setPaidBy] = useState<Person>(
+    (localStorage.getItem("activeUser") as Person) || "Tejas"
+  );
 
   const otherPerson: Person =
     paidBy === "Tejas" ? "Nikita" : "Tejas";
@@ -127,6 +131,9 @@ const AddExpense: React.FC = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
 
+    // ✅ KEEP USER CONSISTENT
+    localStorage.setItem("activeUser", paidBy);
+
     navigate("/expenses");
   };
 
@@ -167,8 +174,7 @@ const AddExpense: React.FC = () => {
               style={{
                 flex: 1,
                 borderRadius: 999,
-                backgroundColor:
-                  type === t ? theme.main : "#e5e7eb",
+                backgroundColor: type === t ? theme.main : "#e5e7eb",
                 color: type === t ? "white" : "#333",
                 fontWeight: 600,
               }}
@@ -186,12 +192,14 @@ const AddExpense: React.FC = () => {
           {(["Tejas", "Nikita"] as Person[]).map((p) => (
             <Button
               key={p}
-              onClick={() => setPaidBy(p)}
+              onClick={() => {
+                setPaidBy(p);
+                localStorage.setItem("activeUser", p); // ✅ sync
+              }}
               style={{
                 flex: 1,
                 borderRadius: 999,
-                backgroundColor:
-                  paidBy === p ? theme.main : "#e5e7eb",
+                backgroundColor: paidBy === p ? theme.main : "#e5e7eb",
                 color: paidBy === p ? "white" : "#333",
                 fontWeight: 600,
               }}
@@ -217,22 +225,16 @@ const AddExpense: React.FC = () => {
         </Card>
 
         {/* TITLE */}
-        <Text weight="bold" mb="6px">
-          Title
-        </Text>
+        <Text weight="bold" mb="6px">Title</Text>
         <TextField.Root
-          placeholder="Dinner, Movie, Cash given..."
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           mb="16px"
         />
 
         {/* DESCRIPTION */}
-        <Text weight="bold" mb="6px">
-          Description (optional)
-        </Text>
+        <Text weight="bold" mb="6px">Description</Text>
         <TextArea
-          placeholder="Extra details..."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
@@ -240,21 +242,16 @@ const AddExpense: React.FC = () => {
         />
 
         {/* AMOUNT */}
-        <Text weight="bold" mb="6px">
-          Amount (₹)
-        </Text>
+        <Text weight="bold" mb="6px">Amount (₹)</Text>
         <TextField.Root
           type="number"
-          placeholder="Enter amount"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           mb="16px"
         />
 
         {/* DATE */}
-        <Text weight="bold" mb="6px">
-          Date
-        </Text>
+        <Text weight="bold" mb="6px">Date</Text>
         <Flex align="center" gap="8px" mb="24px">
           <Calendar size={18} />
           <input

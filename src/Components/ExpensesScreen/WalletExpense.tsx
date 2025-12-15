@@ -46,7 +46,11 @@ const uid = () =>
 const WalletExpense: React.FC = () => {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState<User>("Tejas");
+  // ✅ DEFAULT USER FROM HOME
+  const [user, setUser] = useState<User>(
+    (localStorage.getItem("activeUser") as User) || "Tejas"
+  );
+
   const [entries, setEntries] = useState<WalletEntry[]>([]);
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<EntryType>("CREDIT");
@@ -115,13 +119,16 @@ const WalletExpense: React.FC = () => {
 
     const remaining = entries.filter((e) => e.id !== id);
 
+    // ✅ RECALCULATE BALANCE FOR CURRENT USER ONLY
     let balance = 0;
     const recalculated = remaining.map((e) => {
       if (e.user !== user) return e;
+
       balance =
         e.type === "CREDIT"
           ? balance + e.amount
           : balance - e.amount;
+
       return { ...e, balanceAfter: balance };
     });
 
@@ -135,7 +142,7 @@ const WalletExpense: React.FC = () => {
       style={{
         minHeight: "100vh",
         padding: "18px 14px",
-        background: `linear-gradient(120deg,${theme.soft},#fff)`,
+        background: `linear-gradient(120deg,${theme.soft},#ffffff)`,
       }}
     >
       <Box style={{ maxWidth: 900, margin: "0 auto" }}>
@@ -156,7 +163,10 @@ const WalletExpense: React.FC = () => {
           {(["Tejas", "Nikita"] as User[]).map((u) => (
             <Button
               key={u}
-              onClick={() => setUser(u)}
+              onClick={() => {
+                setUser(u);
+                localStorage.setItem("activeUser", u);
+              }}
               style={{
                 flex: 1,
                 borderRadius: 999,
@@ -211,13 +221,7 @@ const WalletExpense: React.FC = () => {
         </Card>
 
         {/* TABLE */}
-        <Card
-          style={{
-            padding: 0,
-            borderRadius: 18,
-            overflowX: "auto",
-          }}
-        >
+        <Card style={{ padding: 0, borderRadius: 18, overflowX: "auto" }}>
           <Table.Root>
             <Table.Header>
               <Table.Row>
