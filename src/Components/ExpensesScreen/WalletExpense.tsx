@@ -57,6 +57,7 @@ const WalletExpense: React.FC = () => {
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [toast, setToast] = useState("");
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   const theme =
     user === "Tejas"
@@ -67,10 +68,17 @@ const WalletExpense: React.FC = () => {
     setEntries(loadEntries());
   }, []);
 
-  const userEntries = useMemo(
-    () => entries.filter((e) => e.user === user),
-    [entries, user]
-  );
+const userEntries = useMemo(() => {
+  return entries
+    .filter((e) => e.user === user)
+    .sort((a, b) => {
+      if (sortOrder === 'newest') {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      } else {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      }
+    });
+}, [entries, user, sortOrder]);
 
   const walletBalance =
     userEntries.length > 0
@@ -100,7 +108,7 @@ const WalletExpense: React.FC = () => {
       type,
       title: title.trim(),
       amount: amt,
-      date: new Date().toISOString().slice(0, 10),
+      date: new Date().toISOString(),
       balanceAfter: newBalance,
     };
 
@@ -220,8 +228,34 @@ const WalletExpense: React.FC = () => {
           </Flex>
         </Card>
 
+        {/* SORTING CONTROLS */}
+        <Flex gap="10px" mb="16px" justify="end">
+          <Button
+            variant={sortOrder === 'newest' ? 'solid' : 'soft'}
+            onClick={() => setSortOrder('newest')}
+            style={{
+              borderRadius: 999,
+              backgroundColor: sortOrder === 'newest' ? theme.main : undefined,
+              color: sortOrder === 'newest' ? 'white' : undefined,
+            }}
+          >
+            Newest First
+          </Button>
+          <Button
+            variant={sortOrder === 'oldest' ? 'solid' : 'soft'}
+            onClick={() => setSortOrder('oldest')}
+            style={{
+              borderRadius: 999,
+              backgroundColor: sortOrder === 'oldest' ? theme.main : undefined,
+              color: sortOrder === 'oldest' ? 'white' : undefined,
+            }}
+          >
+            Oldest First
+          </Button>
+        </Flex>
+
         {/* TABLE */}
-        <Card style={{ padding: 0, borderRadius: 18, overflowX: "auto" }}>
+        <Card style={{ padding: 0, borderRadius: 18, overflowX: "auto", border: '1px solid #e5e7eb' }}>
           <Table.Root>
             <Table.Header>
               <Table.Row>
@@ -242,21 +276,21 @@ const WalletExpense: React.FC = () => {
             <Table.Body>
               {userEntries.length === 0 ? (
                 <Table.Row>
-                  <Table.Cell colSpan={5} align="center">
+                  <Table.Cell colSpan={5} align="center" style={{ padding: '20px' }}>
                     No entries yet
                   </Table.Cell>
                 </Table.Row>
               ) : (
                 userEntries.map((e) => (
-                  <Table.Row key={e.id}>
-                    <Table.Cell>
+                  <Table.Row key={e.id} style={{ '&:hover': { backgroundColor: '#f9fafb' } }}>
+                    <Table.Cell style={{ padding: '12px' }}>
                       <Text weight="bold">{e.title}</Text>
                       <Text size="1" color="gray">
                         {e.type}
                       </Text>
                     </Table.Cell>
-                    <Table.Cell>{e.date}</Table.Cell>
-                    <Table.Cell align="center">
+                    <Table.Cell style={{ padding: '12px' }}>{e.date}</Table.Cell>
+                    <Table.Cell align="center" style={{ padding: '12px' }}>
                       <Text
                         style={{
                           color:
@@ -268,10 +302,10 @@ const WalletExpense: React.FC = () => {
                         {e.type === "CREDIT" ? "+" : "-"}₹ {e.amount}
                       </Text>
                     </Table.Cell>
-                    <Table.Cell align="center">
+                    <Table.Cell align="center" style={{ padding: '12px' }}>
                       ₹ {e.balanceAfter.toFixed(2)}
                     </Table.Cell>
-                    <Table.Cell align="right">
+                    <Table.Cell align="right" style={{ padding: '12px' }}>
                       <Button
                         size="1"
                         variant="ghost"

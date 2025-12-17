@@ -7,6 +7,7 @@ import ExpensesScreen from "./Components/ExpensesScreen/ExpensesScreen";
 import AddExpense from "./Components/ExpensesScreen/AddExpense";
 import ExpensesSummary from "./Components/ExpensesScreen/ExpensesSummary";
 import WalletExpense from "./Components/ExpensesScreen/WalletExpense"; // ✅ NEW
+import DashboardScreen from "./Screens/DashboardScreen";
 
 export default function AppRouter() {
   return (
@@ -14,6 +15,7 @@ export default function AppRouter() {
       <Routes>
         {/* Home */}
         <Route path="/" element={<HomeScreen />} />
+        <Route path="/dashboard" element={<DashboardScreen />} />
 
         {/* Wallet Expense (NEW FLOW) */}
         <Route path="/wallet" element={<WalletExpense />} />

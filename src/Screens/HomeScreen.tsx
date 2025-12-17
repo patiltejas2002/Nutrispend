@@ -1,15 +1,7 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Flex,
-  Card,
-  Text,
-  Heading,
-  Button,
-  Separator,
-} from "@radix-ui/themes";
+import { Box, Flex, Card, Text, Heading, Button } from "@radix-ui/themes";
 import { useNavigate } from "react-router-dom";
-import { Flame, WalletCards, Receipt } from "lucide-react";
+import { Flame, WalletCards, Receipt, LayoutDashboard } from "lucide-react";
 
 // Swiper
 import "swiper/css";
@@ -74,14 +66,16 @@ const HomeScreen: React.FC = () => {
         justify="between"
         style={{
           padding: "12px 16px",
-          paddingTop: "calc(env(safe-area-inset-top) + 12px)",
           background: "#ffffff",
           borderBottom: "1px solid rgba(148,163,184,0.35)",
-          position: "sticky",
+          position: "fixed",
           top: 0,
+          left: 0,
+          right: 0,
           zIndex: 50,
         }}
       >
+        {/* LEFT */}
         <Flex align="center" gap="10px">
           <img
             src={Logo}
@@ -93,15 +87,25 @@ const HomeScreen: React.FC = () => {
               objectFit: "cover",
             }}
           />
-          <Box>
-            <Text size="4" weight="bold">
-              NutriSpend
-            </Text>
-            <Text size="1" color="gray">
-              Calories & Expenses
-            </Text>
-          </Box>
+          <Text size="4" weight="bold">
+            NutriSpend
+          </Text>
         </Flex>
+
+        {/* RIGHT → DASHBOARD BUTTON */}
+        <Button
+          onClick={() => navigate("/dashboard")}
+          style={{
+            borderRadius: 999,
+            height: 36,
+            background: theme.main,
+            color: "white",
+            fontWeight: 600,
+          }}
+        >
+          <LayoutDashboard size={16} style={{ marginRight: 6 }} />
+          Dashboard
+        </Button>
       </Flex>
 
       {/* MAIN */}
@@ -109,7 +113,7 @@ const HomeScreen: React.FC = () => {
         style={{
           maxWidth: 1120,
           margin: "0 auto",
-          padding: "18px 16px",
+          padding: "78px 16px 18px 16px",
         }}
       >
         {/* USER SWITCH */}
@@ -150,22 +154,14 @@ const HomeScreen: React.FC = () => {
             autoplay={{ delay: 3000 }}
             loop
             pagination={{ clickable: true }}
-            style={{
-              height: 220,
-              borderRadius: 18,
-              overflow: "hidden",
-            }}
+            style={{ height: 220, borderRadius: 18, overflow: "hidden" }}
           >
             {[Banner1, Banner2, Banner3].map((img, i) => (
               <SwiperSlide key={i}>
                 <img
                   src={img}
                   alt="Banner"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               </SwiperSlide>
             ))}
@@ -173,55 +169,46 @@ const HomeScreen: React.FC = () => {
         </Box>
 
         {/* PRIMARY ACTIONS */}
-        <Flex
-          gap="12px"
-          direction={{ initial: "column", sm: "row" }}
-          mb="26px"
-        >
+        <Flex direction="column" gap="10px" mb="20px">
           <Button
             onClick={() => navigate("/calories")}
             style={{
-              flex: 1,
-              height: 52,
+              height: 45,
               background: "#16a34a",
               color: "white",
-              borderRadius: 16,
-              fontWeight: 600,
+              borderRadius: 14,
             }}
           >
-            <Flame size={20} style={{ marginRight: 6 }} /> Calories
+            <Flame size={18} style={{ marginRight: 8 }} />
+            Calories
           </Button>
 
           <Button
             onClick={() => navigate("/wallet")}
             style={{
-              flex: 1,
-              height: 52,
+              height: 45,
               background: "#4f46e5",
               color: "white",
-              borderRadius: 16,
-              fontWeight: 600,
+              borderRadius: 14,
             }}
           >
-            <WalletCards size={20} style={{ marginRight: 6 }} /> Wallet
+            <WalletCards size={18} style={{ marginRight: 8 }} />
+            Wallet
           </Button>
 
           <Button
             onClick={() => navigate("/expenses")}
             style={{
-              flex: 1,
-              height: 52,
+              height: 45,
               background: "#b80404ff",
               color: "white",
-              borderRadius: 16,
-              fontWeight: 600,
+              borderRadius: 14,
             }}
           >
-            <Receipt size={20} style={{ marginRight: 6 }} /> Expenses
+            <Receipt size={18} style={{ marginRight: 8 }} />
+            Expenses
           </Button>
         </Flex>
-
-        <Separator my="4" />
 
         {/* CALORIE BREAKDOWN */}
         <Heading size="4" mb="3">
