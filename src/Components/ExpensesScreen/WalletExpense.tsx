@@ -282,7 +282,7 @@ const userEntries = useMemo(() => {
                 </Table.Row>
               ) : (
                 userEntries.map((e) => (
-                  <Table.Row key={e.id} style={{ '&:hover': { backgroundColor: '#f9fafb' } }}>
+                  <Table.Row key={e.id}>
                     <Table.Cell style={{ padding: '12px' }}>
                       <Text weight="bold">{e.title}</Text>
                       <Text size="1" color="gray">
