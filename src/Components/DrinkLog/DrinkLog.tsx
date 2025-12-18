@@ -20,7 +20,7 @@ type DrinkType = "Beer" | "Whisky" | "Vodka" | "Other";
 const getActiveUser = (): User =>
   (localStorage.getItem("activeUser") as User) || "Tejas";
 
-
+const USERS: User[] = ["Tejas", "Nikita"];
 
 /* ===================== TYPES ===================== */
 type DrinkEntry = {
@@ -34,11 +34,8 @@ type DrinkEntry = {
   people: User[];
 };
 
-/* ✅ FORM TYPE (FIXED) */
-type DrinkForm = Omit<
-  DrinkEntry,
-  "id" | "drinkAmount" | "chakanaAmount"
-> & {
+/* ✅ FORM TYPE (string amounts for inputs) */
+type DrinkForm = Omit<DrinkEntry, "id" | "drinkAmount" | "chakanaAmount"> & {
   drinkAmount: string;
   chakanaAmount: string;
 };
@@ -51,8 +48,7 @@ const uid = () =>
 const DrinkLog: React.FC = () => {
   const navigate = useNavigate();
 
-  const [user] = useState<User>(getActiveUser());
-
+  const [user, setUser] = useState<User>(getActiveUser());
   const [entries, setEntries] = useState<DrinkEntry[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -145,17 +141,54 @@ const DrinkLog: React.FC = () => {
             <Heading size="6">Drinks</Heading>
           </Flex>
 
-          <Button
-            onClick={() => setOpen(true)}
-            style={{
-              borderRadius: 999,
-              backgroundColor: theme.main,
-              color: "white",
-              fontWeight: 600,
-            }}
-          >
-            Add
-          </Button>
+          <Flex gap="10px">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/drinks/summary")}
+              style={{
+                borderRadius: 999,
+                borderColor: theme.main,
+                color: theme.main,
+                fontWeight: 600,
+              }}
+            >
+              Summary
+            </Button>
+
+            <Button
+              onClick={() => setOpen(true)}
+              style={{
+                borderRadius: 999,
+                backgroundColor: theme.main,
+                color: "white",
+                fontWeight: 600,
+              }}
+            >
+              Add
+            </Button>
+          </Flex>
+        </Flex>
+
+        {/* USER TOGGLE */}
+        <Flex gap="12px" mb="30px">
+          {USERS.map((u) => (
+            <Button
+              key={u}
+              onClick={() => {
+                setUser(u);
+                localStorage.setItem("activeUser", u);
+              }}
+              style={{
+                flex: 1,
+                borderRadius: 999,
+                backgroundColor: user === u ? theme.main : "#f1f5f9",
+                color: user === u ? "white" : "#334155",
+                fontWeight: 700,
+              }}
+            >
+              {u}
+            </Button>
+          ))}
         </Flex>
 
         {/* TABLE */}
@@ -206,7 +239,15 @@ const DrinkLog: React.FC = () => {
                     </Table.Cell>
 
                     <Table.Cell align="center">
-                      <Badge>{e.people.length === 2 ? "Both" : e.people[0]}</Badge>
+                      <Badge
+                        style={{
+                          backgroundColor:
+                            e.people.length === 2 ? "#dcfce7" : theme.soft,
+                          color: e.people.length === 2 ? "#166534" : theme.text,
+                        }}
+                      >
+                        {e.people.length === 2 ? "Both" : e.people[0]}
+                      </Badge>
                     </Table.Cell>
 
                     <Table.Cell align="right">
@@ -227,12 +268,19 @@ const DrinkLog: React.FC = () => {
         </Card>
       </Box>
 
-      {/* MODAL */}
+      {/* ADD MODAL */}
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Content style={{ borderRadius: 22, padding: 24 }}>
           <Heading size="4" mb="4">
             Add Drink 🍺
           </Heading>
+
+          <TextField.Root
+            type="date"
+            value={form.date}
+            onChange={(e) => setForm({ ...form, date: e.target.value })}
+            mb="3"
+          />
 
           <TextField.Root
             placeholder="Where? (Home / Bar)"
@@ -241,7 +289,26 @@ const DrinkLog: React.FC = () => {
             mb="3"
           />
 
-          <Flex gap="3" mb="4">
+          <select
+            value={form.drink}
+            onChange={(e) =>
+              setForm({ ...form, drink: e.target.value as DrinkType })
+            }
+            style={{
+              width: "100%",
+              padding: "12px",
+              borderRadius: 12,
+              border: "1px solid #e5e7eb",
+              marginBottom: 12,
+            }}
+          >
+            <option value="Beer">🍺 Beer</option>
+            <option value="Whisky">🥃 Whisky</option>
+            <option value="Vodka">🍸 Vodka</option>
+            <option value="Other">🍻 Other</option>
+          </select>
+
+          <Flex gap="3" mb="3">
             <TextField.Root
               placeholder="Drink price ₹"
               value={form.drinkAmount}
@@ -258,18 +325,81 @@ const DrinkLog: React.FC = () => {
             />
           </Flex>
 
+          <TextField.Root
+            placeholder="Chakana (Chicken / Chips)"
+            value={form.chakana}
+            onChange={(e) => setForm({ ...form, chakana: e.target.value })}
+            mb="4"
+          />
+
           <Button
             onClick={save}
             style={{
               width: "100%",
               borderRadius: 999,
+              fontWeight: 700,
               backgroundColor: theme.main,
               color: "white",
-              fontWeight: 700,
+              padding: "14px",
             }}
           >
             Save Drink
           </Button>
+          {/* WHO DRANK */}
+          <Box mb="4">
+            <Text size="2" weight="bold" mb="2">
+              Who drank?
+            </Text>
+
+            <Flex gap="2">
+              {/* ACTIVE USER */}
+              <Button
+                variant={
+                  form.people.length === 1 && form.people[0] === user
+                    ? "solid"
+                    : "soft"
+                }
+                style={{
+                  backgroundColor:
+                    form.people.length === 1 && form.people[0] === user
+                      ? theme.main
+                      : undefined,
+                  color:
+                    form.people.length === 1 && form.people[0] === user
+                      ? "white"
+                      : undefined,
+                  fontWeight: 600,
+                }}
+                onClick={() =>
+                  setForm((p) => ({
+                    ...p,
+                    people: [user],
+                  }))
+                }
+              >
+                {user}
+              </Button>
+
+              {/* BOTH */}
+              <Button
+                variant={form.people.length === 2 ? "solid" : "soft"}
+                style={{
+                  backgroundColor:
+                    form.people.length === 2 ? "#22c55e" : "#dcfce7",
+                  color: form.people.length === 2 ? "white" : "#166534",
+                  fontWeight: 600,
+                }}
+                onClick={() =>
+                  setForm((p) => ({
+                    ...p,
+                    people: ["Tejas", "Nikita"],
+                  }))
+                }
+              >
+                Yeah 🍻 Both
+              </Button>
+            </Flex>
+          </Box>
         </Dialog.Content>
       </Dialog.Root>
     </Box>
