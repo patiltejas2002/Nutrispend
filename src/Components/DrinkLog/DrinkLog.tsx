@@ -49,24 +49,22 @@ const DrinkLog: React.FC = () => {
   // 🎨 THEME
   const theme =
     user === "Tejas"
-      ? {
-          main: "#4A90E2",
-          soft: "#b3e1ffff",
-          text: "#1e40af",
-        }
-      : {
-          main: "#ec4899",
-          soft: "#ffbbe2ff",
-          text: "#ad1854ff",
-        };
+      ? { main: "#4A90E2", soft: "#b3e1ffff", text: "#1e40af" }
+      : { main: "#ec4899", soft: "#ffbbe2ff", text: "#ad1854ff" };
 
-  const [form, setForm] = useState<Omit<DrinkEntry, "id">>({
+  /* ===================== FORM ===================== */
+  const [form, setForm] = useState<
+    Omit<DrinkEntry, "id"> & {
+      drinkAmount: string;
+      chakanaAmount: string;
+    }
+  >({
     date: new Date().toISOString().split("T")[0],
     place: "",
     drink: "Beer",
-    drinkAmount: 0,
+    drinkAmount: "",
     chakana: "",
-    chakanaAmount: 0,
+    chakanaAmount: "",
     people: [user],
   });
 
@@ -82,9 +80,9 @@ const DrinkLog: React.FC = () => {
         date: new Date().toISOString().split("T")[0],
         place: "",
         drink: "Beer",
-        drinkAmount: 0,
+        drinkAmount: "",
         chakana: "",
-        chakanaAmount: 0,
+        chakanaAmount: "",
         people: [user],
       });
     }
@@ -92,9 +90,21 @@ const DrinkLog: React.FC = () => {
 
   /* ===================== SAVE ===================== */
   const save = () => {
-    if (!form.place || form.drinkAmount <= 0) return;
+    const drinkAmt = Number(form.drinkAmount || 0);
+    const chakanaAmt = Number(form.chakanaAmount || 0);
 
-    const updated = [{ ...form, id: uid() }, ...entries];
+    if (!form.place || drinkAmt <= 0) return;
+
+    const updated: DrinkEntry[] = [
+      {
+        ...form,
+        id: uid(),
+        drinkAmount: drinkAmt,
+        chakanaAmount: chakanaAmt,
+      },
+      ...entries,
+    ];
+
     setEntries(updated);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     setOpen(false);
@@ -127,7 +137,7 @@ const DrinkLog: React.FC = () => {
             >
               <ArrowLeft />
             </Button>
-            <Heading size="6"> Drinks</Heading>
+            <Heading size="6">Drinks</Heading>
           </Flex>
 
           <Flex gap="10px">
@@ -139,7 +149,6 @@ const DrinkLog: React.FC = () => {
                 borderColor: theme.main,
                 color: theme.main,
                 fontWeight: 600,
-                backgroundColor: "white",
               }}
             >
               Summary
@@ -210,7 +219,6 @@ const DrinkLog: React.FC = () => {
               ) : (
                 entries.map((e) => (
                   <Table.Row key={e.id}>
-                    {/* DETAILS */}
                     <Table.Cell>
                       <Text weight="bold">{e.place}</Text>
                       <Text size="1" color="gray">
@@ -218,41 +226,32 @@ const DrinkLog: React.FC = () => {
                       </Text>
                     </Table.Cell>
 
-                    {/* WHAT */}
                     <Table.Cell>
-                      <Text>
-                        {e.drink === "Beer" && "🍺 Beer"}
-                        {e.drink === "Whisky" && "🥃 Whisky"}
-                        {e.drink === "Vodka" && "🍸 Vodka"}
-                        {e.drink === "Other" && "🍻 Other"}
-                      </Text>
+                      <Text>{e.drink}</Text>
                       <Text size="1" color="gray">
                         🍗 {e.chakana || "—"}
                       </Text>
                     </Table.Cell>
 
-                    {/* AMOUNT */}
                     <Table.Cell align="center">
                       ₹ {(e.drinkAmount + e.chakanaAmount).toFixed(2)}
-                      <Text size="1" color="gray">
-                        Drink + Chakana
-                      </Text>
                     </Table.Cell>
 
-                    {/* WHO */}
                     <Table.Cell align="center">
                       <Badge
                         style={{
                           backgroundColor:
                             e.people.length === 2 ? "#dcfce7" : theme.soft,
-                          color: e.people.length === 2 ? "#166534" : theme.text,
+                          color:
+                            e.people.length === 2
+                              ? "#166534"
+                              : theme.text,
                         }}
                       >
                         {e.people.length === 2 ? "Both" : e.people[0]}
                       </Badge>
                     </Table.Cell>
 
-                    {/* ACTION */}
                     <Table.Cell align="right">
                       <Button
                         size="1"
@@ -278,154 +277,68 @@ const DrinkLog: React.FC = () => {
             Add Drink 🍺
           </Heading>
 
-          {/* DATE + PLACE */}
-          <Flex gap="3" direction="column" mb="4">
-            <Text size="2" weight="bold">
-              Details
-            </Text>
+          <TextField.Root
+            type="date"
+            value={form.date}
+            onChange={(e) => setForm({ ...form, date: e.target.value })}
+            mb="3"
+          />
 
+          <TextField.Root
+            placeholder="Where? (Home / Bar)"
+            value={form.place}
+            onChange={(e) => setForm({ ...form, place: e.target.value })}
+            mb="3"
+          />
+
+          {/* DRINK */}
+          <select
+            value={form.drink}
+            onChange={(e) =>
+              setForm({ ...form, drink: e.target.value as DrinkType })
+            }
+            style={{
+              width: "100%",
+              padding: "12px",
+              borderRadius: 12,
+              border: "1px solid #e5e7eb",
+              marginBottom: 12,
+            }}
+          >
+            <option value="Beer">🍺 Beer</option>
+            <option value="Whisky">🥃 Whisky</option>
+            <option value="Vodka">🍸 Vodka</option>
+            <option value="Other">🍻 Other</option>
+          </select>
+
+          {/* AMOUNTS */}
+          <Flex gap="3" mb="3">
             <TextField.Root
-              type="date"
-              value={form.date}
-              onChange={(e) => setForm({ ...form, date: e.target.value })}
+              placeholder="Drink price ₹"
+              type="number"
+              value={form.drinkAmount}
+              onChange={(e) =>
+                setForm({ ...form, drinkAmount: e.target.value })
+              }
             />
 
             <TextField.Root
-              placeholder="Where? (Home / Bar)"
-              value={form.place}
-              onChange={(e) => setForm({ ...form, place: e.target.value })}
+              placeholder="Chakana price ₹"
+              type="number"
+              value={form.chakanaAmount}
+              onChange={(e) =>
+                setForm({ ...form, chakanaAmount: e.target.value })
+              }
             />
           </Flex>
 
-          {/* DRINK TYPE */}
-          <Box mb="4">
-            <Text size="2" weight="bold" mb="1">
-              Drink
-            </Text>
+          <TextField.Root
+            placeholder="Chakana (Chicken / Chips)"
+            value={form.chakana}
+            onChange={(e) => setForm({ ...form, chakana: e.target.value })}
+            mb="4"
+          />
 
-            <select
-              value={form.drink}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  drink: e.target.value as DrinkType,
-                })
-              }
-              style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: 12,
-                border: "1px solid #e5e7eb",
-                fontSize: 14,
-              }}
-            >
-              <option value="Beer">🍺 Beer</option>
-              <option value="Whisky">🥃 Whisky</option>
-              <option value="Vodka">🍸 Vodka</option>
-              <option value="Other">🍻 Other</option>
-            </select>
-          </Box>
-
-          {/* AMOUNTS */}
-          <Box mb="4">
-            <Text size="2" weight="bold" mb="2">
-              Amounts
-            </Text>
-
-            <Flex gap="3">
-              <TextField.Root
-                placeholder="Drink ₹"
-                type="number"
-                value={form.drinkAmount}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    drinkAmount: Number(e.target.value),
-                  })
-                }
-              />
-
-              <TextField.Root
-                placeholder="Chakana ₹"
-                type="number"
-                value={form.chakanaAmount}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    chakanaAmount: Number(e.target.value),
-                  })
-                }
-              />
-            </Flex>
-          </Box>
-
-          {/* CHAKANA TEXT */}
-          <Box mb="4">
-            <Text size="2" weight="bold" mb="1">
-              Chakana
-            </Text>
-
-            <TextField.Root
-              placeholder="Chicken / Chips / etc"
-              value={form.chakana}
-              onChange={(e) => setForm({ ...form, chakana: e.target.value })}
-            />
-          </Box>
-
-          {/* WHO */}
-          <Box mb="5">
-            <Text size="2" weight="bold" mb="2">
-              Who drank?
-            </Text>
-
-            <Flex gap="2">
-              <Button
-                variant={
-                  form.people.length === 1 && form.people[0] === user
-                    ? "solid"
-                    : "soft"
-                }
-                style={{
-                  backgroundColor:
-                    form.people.length === 1 && form.people[0] === user
-                      ? theme.main
-                      : undefined,
-                  color:
-                    form.people.length === 1 && form.people[0] === user
-                      ? "white"
-                      : undefined,
-                }}
-                onClick={() =>
-                  setForm((p) => ({
-                    ...p,
-                    people: [user],
-                  }))
-                }
-              >
-                {user}
-              </Button>
-
-              <Button
-                variant={form.people.length === 2 ? "solid" : "soft"}
-                style={{
-                  backgroundColor:
-                    form.people.length === 2 ? "#22c55e" : "#dcfce7",
-                  color: form.people.length === 2 ? "white" : "#166534",
-                  fontWeight: 600,
-                }}
-                onClick={() =>
-                  setForm((p) => ({
-                    ...p,
-                    people: ["Tejas", "Nikita"],
-                  }))
-                }
-              >
-                Yeah 🍻 Both
-              </Button>
-            </Flex>
-          </Box>
-
-          {/* SUBMIT */}
           <Button
             onClick={save}
             style={{
@@ -435,7 +348,6 @@ const DrinkLog: React.FC = () => {
               backgroundColor: theme.main,
               color: "white",
               padding: "14px",
-              fontSize: 15,
             }}
           >
             Save Drink
