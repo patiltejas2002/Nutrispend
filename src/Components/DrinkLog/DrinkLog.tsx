@@ -20,7 +20,7 @@ type DrinkType = "Beer" | "Whisky" | "Vodka" | "Other";
 const getActiveUser = (): User =>
   (localStorage.getItem("activeUser") as User) || "Tejas";
 
-const USERS: User[] = ["Tejas", "Nikita"];
+
 
 /* ===================== TYPES ===================== */
 type DrinkEntry = {
@@ -34,6 +34,15 @@ type DrinkEntry = {
   people: User[];
 };
 
+/* ✅ FORM TYPE (FIXED) */
+type DrinkForm = Omit<
+  DrinkEntry,
+  "id" | "drinkAmount" | "chakanaAmount"
+> & {
+  drinkAmount: string;
+  chakanaAmount: string;
+};
+
 const STORAGE_KEY = "drink_logs_v2";
 
 const uid = () =>
@@ -42,7 +51,8 @@ const uid = () =>
 const DrinkLog: React.FC = () => {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState<User>(getActiveUser());
+  const [user] = useState<User>(getActiveUser());
+
   const [entries, setEntries] = useState<DrinkEntry[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -53,12 +63,7 @@ const DrinkLog: React.FC = () => {
       : { main: "#ec4899", soft: "#ffbbe2ff", text: "#ad1854ff" };
 
   /* ===================== FORM ===================== */
-  const [form, setForm] = useState<
-    Omit<DrinkEntry, "id"> & {
-      drinkAmount: string;
-      chakanaAmount: string;
-    }
-  >({
+  const [form, setForm] = useState<DrinkForm>({
     date: new Date().toISOString().split("T")[0],
     place: "",
     drink: "Beer",
@@ -140,54 +145,17 @@ const DrinkLog: React.FC = () => {
             <Heading size="6">Drinks</Heading>
           </Flex>
 
-          <Flex gap="10px">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/drinks/summary")}
-              style={{
-                borderRadius: 999,
-                borderColor: theme.main,
-                color: theme.main,
-                fontWeight: 600,
-              }}
-            >
-              Summary
-            </Button>
-
-            <Button
-              onClick={() => setOpen(true)}
-              style={{
-                borderRadius: 999,
-                backgroundColor: theme.main,
-                color: "white",
-                fontWeight: 600,
-              }}
-            >
-              Add
-            </Button>
-          </Flex>
-        </Flex>
-
-        {/* USER TOGGLE */}
-        <Flex gap="12px" mb="30px">
-          {USERS.map((u) => (
-            <Button
-              key={u}
-              onClick={() => {
-                setUser(u);
-                localStorage.setItem("activeUser", u);
-              }}
-              style={{
-                flex: 1,
-                borderRadius: 999,
-                backgroundColor: user === u ? theme.main : "#f1f5f9",
-                color: user === u ? "white" : "#334155",
-                fontWeight: 700,
-              }}
-            >
-              {u}
-            </Button>
-          ))}
+          <Button
+            onClick={() => setOpen(true)}
+            style={{
+              borderRadius: 999,
+              backgroundColor: theme.main,
+              color: "white",
+              fontWeight: 600,
+            }}
+          >
+            Add
+          </Button>
         </Flex>
 
         {/* TABLE */}
@@ -238,18 +206,7 @@ const DrinkLog: React.FC = () => {
                     </Table.Cell>
 
                     <Table.Cell align="center">
-                      <Badge
-                        style={{
-                          backgroundColor:
-                            e.people.length === 2 ? "#dcfce7" : theme.soft,
-                          color:
-                            e.people.length === 2
-                              ? "#166534"
-                              : theme.text,
-                        }}
-                      >
-                        {e.people.length === 2 ? "Both" : e.people[0]}
-                      </Badge>
+                      <Badge>{e.people.length === 2 ? "Both" : e.people[0]}</Badge>
                     </Table.Cell>
 
                     <Table.Cell align="right">
@@ -270,19 +227,12 @@ const DrinkLog: React.FC = () => {
         </Card>
       </Box>
 
-      {/* ADD MODAL */}
+      {/* MODAL */}
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Content style={{ borderRadius: 22, padding: 24 }}>
           <Heading size="4" mb="4">
             Add Drink 🍺
           </Heading>
-
-          <TextField.Root
-            type="date"
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
-            mb="3"
-          />
 
           <TextField.Root
             placeholder="Where? (Home / Bar)"
@@ -291,40 +241,16 @@ const DrinkLog: React.FC = () => {
             mb="3"
           />
 
-          {/* DRINK */}
-          <select
-            value={form.drink}
-            onChange={(e) =>
-              setForm({ ...form, drink: e.target.value as DrinkType })
-            }
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: 12,
-              border: "1px solid #e5e7eb",
-              marginBottom: 12,
-            }}
-          >
-            <option value="Beer">🍺 Beer</option>
-            <option value="Whisky">🥃 Whisky</option>
-            <option value="Vodka">🍸 Vodka</option>
-            <option value="Other">🍻 Other</option>
-          </select>
-
-          {/* AMOUNTS */}
-          <Flex gap="3" mb="3">
+          <Flex gap="3" mb="4">
             <TextField.Root
               placeholder="Drink price ₹"
-              type="number"
               value={form.drinkAmount}
               onChange={(e) =>
                 setForm({ ...form, drinkAmount: e.target.value })
               }
             />
-
             <TextField.Root
               placeholder="Chakana price ₹"
-              type="number"
               value={form.chakanaAmount}
               onChange={(e) =>
                 setForm({ ...form, chakanaAmount: e.target.value })
@@ -332,22 +258,14 @@ const DrinkLog: React.FC = () => {
             />
           </Flex>
 
-          <TextField.Root
-            placeholder="Chakana (Chicken / Chips)"
-            value={form.chakana}
-            onChange={(e) => setForm({ ...form, chakana: e.target.value })}
-            mb="4"
-          />
-
           <Button
             onClick={save}
             style={{
               width: "100%",
               borderRadius: 999,
-              fontWeight: 700,
               backgroundColor: theme.main,
               color: "white",
-              padding: "14px",
+              fontWeight: 700,
             }}
           >
             Save Drink
