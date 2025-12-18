@@ -82,9 +82,9 @@ const DrinkLog: React.FC = () => {
         date: new Date().toISOString().split("T")[0],
         place: "",
         drink: "Beer",
-        drinkAmount: undefined,
+        drinkAmount: 0,
         chakana: "",
-        chakanaAmount: undefined,
+        chakanaAmount: 0,
         people: [user],
       });
     }

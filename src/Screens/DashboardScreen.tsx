@@ -185,7 +185,7 @@ const Dashboard: React.FC = () => {
             <Heading size="3" mt="2">
               Wallet Balance
             </Heading>
-            <Text size="7" weight="bold" color="#16a34a">
+            <Text size="7" weight="bold" color="green">
               ₹ {walletBalance.toFixed(2)}
             </Text>
           </Card>
@@ -209,7 +209,7 @@ const Dashboard: React.FC = () => {
             <Heading size="3" mt="2">
               Loans
             </Heading>
-            <Text size="7" weight="bold" color="#b45309">
+            <Text size="7" weight="bold" color="orange">
               ₹ {pendingLoans.toFixed(2)}
             </Text>
           </Card>
