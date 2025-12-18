@@ -10,13 +10,7 @@ import {
   Dialog,
   TextField,
 } from "@radix-ui/themes";
-import {
-  Plus,
-  Minus,
-  Trash2,
-  X,
-  ArrowLeft,
-} from "lucide-react";
+import { Plus, Minus, Trash2, X, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type User = "Tejas" | "Nikita";
@@ -46,7 +40,6 @@ const uid = () =>
 const WalletExpense: React.FC = () => {
   const navigate = useNavigate();
 
-  // ✅ DEFAULT USER FROM HOME
   const [user, setUser] = useState<User>(
     (localStorage.getItem("activeUser") as User) || "Tejas"
   );
@@ -57,33 +50,26 @@ const WalletExpense: React.FC = () => {
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [toast, setToast] = useState("");
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   const theme =
     user === "Tejas"
-      ? { main: "#4A90E2", soft: "#e0f2fe" }
-      : { main: "#ec4899", soft: "#fce7f3" };
+      ? { main: "#4A90E2", soft: "#a8dcffff" }
+      : { main: "#ec4899", soft: "#ffb2deff" };
 
   useEffect(() => {
     setEntries(loadEntries());
   }, []);
 
-const userEntries = useMemo(() => {
-  return entries
-    .filter((e) => e.user === user)
-    .sort((a, b) => {
-      if (sortOrder === 'newest') {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      } else {
-        return new Date(a.date).getTime() - new Date(b.date).getTime();
-      }
-    });
-}, [entries, user, sortOrder]);
-
-  const walletBalance =
-    userEntries.length > 0
-      ? userEntries[userEntries.length - 1].balanceAfter
-      : 0;
+  // ✅ newest entry ALWAYS first
+  const userEntries = useMemo(() => {
+    return entries
+      .filter((e) => e.user === user)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [entries, user]);
+  const walletBalance = useMemo(() => {
+    const userTx = entries.filter((e) => e.user === user);
+    return userTx.length ? userTx[userTx.length - 1].balanceAfter : 0;
+  }, [entries, user]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -98,9 +84,7 @@ const userEntries = useMemo(() => {
     }
 
     const newBalance =
-      type === "CREDIT"
-        ? walletBalance + amt
-        : walletBalance - amt;
+      type === "CREDIT" ? walletBalance + amt : walletBalance - amt;
 
     const newEntry: WalletEntry = {
       id: uid(),
@@ -127,15 +111,11 @@ const userEntries = useMemo(() => {
 
     const remaining = entries.filter((e) => e.id !== id);
 
-    // ✅ RECALCULATE BALANCE FOR CURRENT USER ONLY
     let balance = 0;
     const recalculated = remaining.map((e) => {
       if (e.user !== user) return e;
 
-      balance =
-        e.type === "CREDIT"
-          ? balance + e.amount
-          : balance - e.amount;
+      balance = e.type === "CREDIT" ? balance + e.amount : balance - e.amount;
 
       return { ...e, balanceAfter: balance };
     });
@@ -228,34 +208,15 @@ const userEntries = useMemo(() => {
           </Flex>
         </Card>
 
-        {/* SORTING CONTROLS */}
-        <Flex gap="10px" mb="16px" justify="end">
-          <Button
-            variant={sortOrder === 'newest' ? 'solid' : 'soft'}
-            onClick={() => setSortOrder('newest')}
-            style={{
-              borderRadius: 999,
-              backgroundColor: sortOrder === 'newest' ? theme.main : undefined,
-              color: sortOrder === 'newest' ? 'white' : undefined,
-            }}
-          >
-            Newest First
-          </Button>
-          <Button
-            variant={sortOrder === 'oldest' ? 'solid' : 'soft'}
-            onClick={() => setSortOrder('oldest')}
-            style={{
-              borderRadius: 999,
-              backgroundColor: sortOrder === 'oldest' ? theme.main : undefined,
-              color: sortOrder === 'oldest' ? 'white' : undefined,
-            }}
-          >
-            Oldest First
-          </Button>
-        </Flex>
-
         {/* TABLE */}
-        <Card style={{ padding: 0, borderRadius: 18, overflowX: "auto", border: '1px solid #e5e7eb' }}>
+        <Card
+          style={{
+            padding: 0,
+            borderRadius: 18,
+            overflowX: "auto",
+            border: "1px solid #e5e7eb",
+          }}
+        >
           <Table.Root>
             <Table.Header>
               <Table.Row>
@@ -276,36 +237,43 @@ const userEntries = useMemo(() => {
             <Table.Body>
               {userEntries.length === 0 ? (
                 <Table.Row>
-                  <Table.Cell colSpan={5} align="center" style={{ padding: '20px' }}>
+                  <Table.Cell
+                    colSpan={5}
+                    align="center"
+                    style={{ padding: 20 }}
+                  >
                     No entries yet
                   </Table.Cell>
                 </Table.Row>
               ) : (
                 userEntries.map((e) => (
-                  <Table.Row key={e.id}>
-                    <Table.Cell style={{ padding: '12px' }}>
+                  <Table.Row
+                    key={e.id}
+                    style={{
+                      backgroundColor:
+                        e.type === "CREDIT" ? "#ecfdf5" : "#fef2f2",
+                    }}
+                  >
+                    <Table.Cell>
                       <Text weight="bold">{e.title}</Text>
                       <Text size="1" color="gray">
                         {e.type}
                       </Text>
                     </Table.Cell>
-                    <Table.Cell style={{ padding: '12px' }}>{e.date}</Table.Cell>
-                    <Table.Cell align="center" style={{ padding: '12px' }}>
+                    <Table.Cell>{new Date(e.date).toLocaleString()}</Table.Cell>
+                    <Table.Cell align="center">
                       <Text
                         style={{
-                          color:
-                            e.type === "CREDIT"
-                              ? "#16a34a"
-                              : "#dc2626",
+                          color: e.type === "CREDIT" ? "#16a34a" : "#dc2626",
                         }}
                       >
                         {e.type === "CREDIT" ? "+" : "-"}₹ {e.amount}
                       </Text>
                     </Table.Cell>
-                    <Table.Cell align="center" style={{ padding: '12px' }}>
+                    <Table.Cell align="center">
                       ₹ {e.balanceAfter.toFixed(2)}
                     </Table.Cell>
-                    <Table.Cell align="right" style={{ padding: '12px' }}>
+                    <Table.Cell align="right">
                       <Button
                         size="1"
                         variant="ghost"

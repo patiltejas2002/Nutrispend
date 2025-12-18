@@ -50,12 +50,12 @@ const ExpensesScreen: React.FC = () => {
     user === "Tejas"
       ? {
           main: "#4A90E2",
-          soft: "#e0f2fe",
+          soft: "#b3e1ffff",
           text: "#1e40af",
         }
       : {
           main: "#ec4899",
-          soft: "#fce7f3",
+          soft: "#ffbbe2ff",
           text: "#9d174d",
         };
 

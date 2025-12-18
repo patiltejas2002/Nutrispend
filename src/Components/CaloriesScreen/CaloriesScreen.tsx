@@ -1,4 +1,4 @@
-/* eslint-disable react-native/no-inline-styles */
+
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -70,8 +70,8 @@ const CaloriesScreen: React.FC = () => {
 
   const theme =
     user === "Tejas"
-      ? { main: "#4A90E2", soft: "#e0f2fe" }
-      : { main: "#ec4899", soft: "#fce7f3" };
+      ? { main: "#4A90E2", soft: "#bae4ffff" }
+      : { main: "#ec4899", soft: "#ffbae1ff" };
 
   useEffect(() => {
     setMeals(JSON.parse(localStorage.getItem("meals") || "[]"));

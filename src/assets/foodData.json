@@ -368,7 +368,7 @@
   "50-50 Biscuit (6 biscuits)": 170,
   "Treat Croissant (1)": 180,
   "Dark Fantasy Choco Fills (1)": 150,
-   "Khari Biscuit (2 pcs)": 160,
+  "Khari Biscuit (2 pcs)": 160,
   "Toast Biscuit (2 pcs)": 140,
   "Butter Toast (2 slices)": 180,
   "Bread Jam": 170,
@@ -385,7 +385,7 @@
   "Paneer Bhurji": 320,
   "Butter Pav (1)": 120,
   "Pav Butter Masala": 220,
-   "Digestive Biscuit (2)": 140,
+  "Digestive Biscuit (2)": 140,
   "Rusk (2 pcs)": 160,
   "Suji Toast": 180,
   "Poha Chivda (Small bowl)": 220,
@@ -395,6 +395,58 @@
   "Butter Corn (Cup)": 220,
   "Coconut Slice": 70,
   "Dates (2 pcs)": 120,
-  "Dry Fruits Mix (Small)": 180
+  "Dry Fruits Mix (Small)": 180,
+  "Sabji (Dry  Any Veg)": 150,
+  "Sabji (Gravy Any Veg)": 220,
+  "Paneer Sabji (Any)": 350,
+  "Chicken Sabji (Any)": 450,
+  "Egg Sabji (Any)": 250,
 
+  "Sabji (Gravy  Any Veg)": 220,
+  "Veg Fried Rice (Chinese)": 450,
+  "Egg Fried Rice (Chinese)": 480,
+  "Chicken Fried Rice (Chinese)": 520,
+
+  "Egg Hakka Noodles": 450,
+  "Chicken Hakka Noodles": 500,
+  "Veg Manchurian (Dry)": 400,
+  "Chicken Manchurian (Dry)": 450,
+
+  "Paneer Chilli (Dry)": 420,
+  "Veg Manchurian (Gravy)": 420,
+  "Chicken Manchurian (Gravy)": 480,
+  "Chilli Chicken (Gravy)": 480,
+  "Chinese Combo (Rice + Starter)": 650,
+  "Chinese Combo (Noodles + Starter)": 700,
+  "Chinese Food (Generic Plate)": 600,
+  "Veg Soup (Home Style)": 120,
+  "Dal Soup": 160,
+  "Mixed Vegetable Soup": 140,
+  "Soup (Any / Generic Bowl)": 150,
+  "Beer (1 bottle / can)": 210,
+  "Beer (2 bottles)": 420,
+
+  "Whisky (2 pegs)": 210,
+  "Vodka (2 pegs)": 200,
+  "Rum (2 pegs)": 220,
+
+  "Alcohol Session (Light)": 500,
+  "Alcohol Session (Heavy)": 800,
+
+  "Chakana (Light)": 200,
+  "Chakana (Heavy)": 350,
+
+  "Alcohol + Chakana (Combo)": 900,
+  "Late Night Snack (Light)": 250,
+  "Late Night Snack (Heavy)": 450,
+
+  "Maggi / Instant Noodles": 380,
+  "Sandwich (Any)": 300,
+
+  "Biscuits (4-5 pcs)": 200,
+  "Namkeen / Farsan (Small Bowl)": 250,
+
+  "Toast / Bread Snack": 220,
+  "Leftover Dinner (Small)": 300,
+  "Leftover Dinner (Full Plate)": 450
 }

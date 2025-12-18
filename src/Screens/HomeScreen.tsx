@@ -42,8 +42,8 @@ const HomeScreen: React.FC = () => {
 
   const theme =
     selectedUser === "Tejas"
-      ? { main: "#4A90E2", soft: "#e0f2fe", shadow: "rgba(74,144,226,0.3)" }
-      : { main: "#ec4899", soft: "#fce7f3", shadow: "rgba(236,72,153,0.3)" };
+      ? { main: "#4A90E2", soft: "#97d6ffff", shadow: "rgba(49, 136, 235, 0.3)" }
+      : { main: "#ec4899", soft: "#ffaadaff", shadow: "rgba(236, 59, 148, 0.3)" };
 
   const bg = `radial-gradient(circle at top left,${theme.soft},#f7efff 40%,#edf7ff 100%)`;
 
@@ -136,9 +136,7 @@ const HomeScreen: React.FC = () => {
                   color: selectedUser === u ? "white" : "#333",
                   fontWeight: 700,
                   boxShadow:
-                    selectedUser === u
-                      ? `0 6px 16px ${theme.shadow}`
-                      : "none",
+                    selectedUser === u ? `0 6px 16px ${theme.shadow}` : "none",
                 }}
               >
                 {u}
@@ -187,7 +185,8 @@ const HomeScreen: React.FC = () => {
             onClick={() => navigate("/wallet")}
             style={{
               height: 45,
-              background: "#4f46e5",
+
+              background: "#b80404ff",
               color: "white",
               borderRadius: 14,
             }}
@@ -200,13 +199,27 @@ const HomeScreen: React.FC = () => {
             onClick={() => navigate("/expenses")}
             style={{
               height: 45,
-              background: "#b80404ff",
+              background: "#4f46e5",
               color: "white",
               borderRadius: 14,
             }}
           >
             <Receipt size={18} style={{ marginRight: 8 }} />
             Expenses
+          </Button>
+          <Button
+            onClick={() => navigate("/drinks")}
+            style={{
+              height: 45,
+              background:
+                "linear-gradient(90deg, #4978fcff, #ff3939ff, rgba(54, 248, 132, 1))",
+
+              color: "white",
+              borderRadius: 14,
+            }}
+          >
+            <WalletCards size={18} style={{ marginRight: 8 }} />
+            Drinks
           </Button>
         </Flex>
 

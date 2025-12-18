@@ -8,6 +8,8 @@ import AddExpense from "./Components/ExpensesScreen/AddExpense";
 import ExpensesSummary from "./Components/ExpensesScreen/ExpensesSummary";
 import WalletExpense from "./Components/ExpensesScreen/WalletExpense"; // ✅ NEW
 import DashboardScreen from "./Screens/DashboardScreen";
+import DrinkLog from "./Components/DrinkLog/DrinkLog";
+import DrinkSummary from "./Components/DrinkLog/DrinkSummary";
 
 export default function AppRouter() {
   return (
@@ -23,6 +25,9 @@ export default function AppRouter() {
         {/* Calories */}
         <Route path="/calories" element={<CaloriesScreen />} />
         <Route path="/add-meal" element={<AddMeal />} />
+        <Route path="/drinks" element={<DrinkLog />} />
+        <Route path="/drinks/summary" element={<DrinkSummary />} />
+
 
         {/* Old Expenses (keep as-is) */}
         <Route path="/expenses" element={<ExpensesScreen />} />
