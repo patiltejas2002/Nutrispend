@@ -243,7 +243,10 @@ const DrinkLog: React.FC = () => {
                         style={{
                           backgroundColor:
                             e.people.length === 2 ? "#dcfce7" : theme.soft,
-                          color: e.people.length === 2 ? "#166534" : theme.text,
+                          color:
+                            e.people.length === 2
+                              ? "#166534"
+                              : theme.text,
                         }}
                       >
                         {e.people.length === 2 ? "Both" : e.people[0]}
@@ -332,19 +335,6 @@ const DrinkLog: React.FC = () => {
             mb="4"
           />
 
-          <Button
-            onClick={save}
-            style={{
-              width: "100%",
-              borderRadius: 999,
-              fontWeight: 700,
-              backgroundColor: theme.main,
-              color: "white",
-              padding: "14px",
-            }}
-          >
-            Save Drink
-          </Button>
           {/* WHO DRANK */}
           <Box mb="4">
             <Text size="2" weight="bold" mb="2">
@@ -352,7 +342,6 @@ const DrinkLog: React.FC = () => {
             </Text>
 
             <Flex gap="2">
-              {/* ACTIVE USER */}
               <Button
                 variant={
                   form.people.length === 1 && form.people[0] === user
@@ -380,7 +369,6 @@ const DrinkLog: React.FC = () => {
                 {user}
               </Button>
 
-              {/* BOTH */}
               <Button
                 variant={form.people.length === 2 ? "solid" : "soft"}
                 style={{
@@ -400,6 +388,20 @@ const DrinkLog: React.FC = () => {
               </Button>
             </Flex>
           </Box>
+
+          <Button
+            onClick={save}
+            style={{
+              width: "100%",
+              borderRadius: 999,
+              fontWeight: 700,
+              backgroundColor: theme.main,
+              color: "white",
+              padding: "14px",
+            }}
+          >
+            Save Drink
+          </Button>
         </Dialog.Content>
       </Dialog.Root>
     </Box>

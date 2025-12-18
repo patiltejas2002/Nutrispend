@@ -56,7 +56,7 @@ const DrinkSummary: React.FC = () => {
 
   const myTotal = totalOf(myEntries);
   const bothTotal = totalOf(bothEntries);
-  const overallTotal = myTotal + bothTotal;
+  const overallTotal = myTotal + bothTotal / 2;
 
   return (
     <Box
