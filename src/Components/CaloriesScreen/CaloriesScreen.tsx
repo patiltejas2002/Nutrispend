@@ -6,7 +6,7 @@ import {
   Flex,
   Button,
   Table,
-  Text,
+  
   Heading,
   Card,
   Badge,
@@ -61,17 +61,14 @@ const CaloriesScreen: React.FC = () => {
   const [user, setUser] = useState<User>(
     (localStorage.getItem("activeUser") as User) || "Tejas"
   );
-
   const [selectedDate, setSelectedDate] = useState(getDate(0));
   const [meals, setMeals] = useState<Meal[]>([]);
   const [chartOpen, setChartOpen] = useState(false);
 
-  const isToday = selectedDate === getDate(0);
-
   const theme =
     user === "Tejas"
-      ? { main: "#4A90E2", soft: "#bae4ffff" }
-      : { main: "#ec4899", soft: "#ffbae1ff" };
+      ? { main: "#4A90E2", soft: "#bae4ff" }
+      : { main: "#ec4899", soft: "#ffbae1" };
 
   useEffect(() => {
     setMeals(JSON.parse(localStorage.getItem("meals") || "[]"));
@@ -82,7 +79,7 @@ const CaloriesScreen: React.FC = () => {
     localStorage.setItem("meals", JSON.stringify(arr));
   };
 
-  /** ✅ SORTED DAILY MEALS (Breakfast → Lunch → Snacks → Dinner) */
+  /** SORTED DAILY MEALS */
   const dailyMeals = useMemo(() => {
     return meals
       .filter((m) => m.user === user && m.date === selectedDate)
@@ -91,14 +88,16 @@ const CaloriesScreen: React.FC = () => {
 
   const totalCalories = dailyMeals.reduce((s, m) => s + m.calories, 0);
 
-  const weeklyData = [...Array(7)]
+  /** LAST 6 DAYS DATA */
+  const weeklyData = [...Array(6)]
     .map((_, i) => {
       const d = getDate(i);
-      const label = i === 0 ? "Today" : i === 1 ? "Yest" : `${i}d ago`;
-      const calories = meals
-        .filter((m) => m.user === user && m.date === d)
-        .reduce((s, m) => s + m.calories, 0);
-      return { label, calories };
+      return {
+        label: i === 0 ? "Today" : `${i} day${i > 1 ? "s" : ""} ago`,
+        calories: meals
+          .filter((m) => m.user === user && m.date === d)
+          .reduce((s, m) => s + m.calories, 0),
+      };
     })
     .reverse();
 
@@ -126,11 +125,10 @@ const CaloriesScreen: React.FC = () => {
           </Flex>
 
           <Button
-            onClick={() => navigate("/add-meal")}
-            disabled={!isToday}
+            onClick={() => navigate(`/add-meal?date=${selectedDate}`)}
             style={{
               borderRadius: 999,
-              backgroundColor: isToday ? theme.main : "#9ca3af",
+              backgroundColor: theme.main,
               color: "white",
               fontWeight: 600,
             }}
@@ -151,8 +149,8 @@ const CaloriesScreen: React.FC = () => {
               style={{
                 flex: 1,
                 borderRadius: 999,
-                backgroundColor: user === u ? theme.main : "#f1f5f9",
-                color: user === u ? "white" : "#334155",
+                backgroundColor: user === u ? theme.main : "#e5e7eb",
+                color: user === u ? "white" : "#333",
                 fontWeight: 700,
               }}
             >
@@ -161,11 +159,10 @@ const CaloriesScreen: React.FC = () => {
           ))}
         </Flex>
 
-        {/* DATE */}
+        {/* DATE SELECTOR */}
         <Flex gap="8px" wrap="wrap" mb="24px">
-          {[0, 1, 2, 3, 4].map((i) => {
+          {[0, 1, 2, 3, 4, 5].map((i) => {
             const d = getDate(i);
-            const label = i === 0 ? "Today" : i === 1 ? "Yest" : `${i}d ago`;
             return (
               <Button
                 key={d}
@@ -176,51 +173,27 @@ const CaloriesScreen: React.FC = () => {
                   color: selectedDate === d ? "white" : "#334155",
                 }}
               >
-                {label}
+                {i === 0 ? "Today" : `${i} day${i > 1 ? "s" : ""} ago`}
               </Button>
             );
           })}
 
-          {isToday && (
-            <Button
-              variant="outline"
-              onClick={() => setChartOpen(true)}
-              style={{
-                borderRadius: 999,
-                borderColor: theme.main,
-                color: theme.main,
-              }}
-            >
-              Weekly
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            onClick={() => setChartOpen(true)}
+            style={{ borderRadius: 999 }}
+          >
+            Weekly
+          </Button>
         </Flex>
 
         {/* TABLE */}
         <Card style={{ padding: 0, borderRadius: 20 }}>
           <Table.Root>
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeaderCell>Meal</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell>Food</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell align="center">
-                  Qty
-                </Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell align="center">
-                  Calories
-                </Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell align="right">
-                  Action
-                </Table.ColumnHeaderCell>
-              </Table.Row>
-            </Table.Header>
-
             <Table.Body>
               {dailyMeals.length === 0 ? (
                 <Table.Row>
-                  <Table.Cell colSpan={5} align="center">
-                    <Text color="gray">No meals added</Text>
-                  </Table.Cell>
+                  <Table.Cell align="center">No meals added</Table.Cell>
                 </Table.Row>
               ) : (
                 dailyMeals.map((m) => (
@@ -235,15 +208,11 @@ const CaloriesScreen: React.FC = () => {
                         {m.type}
                       </Badge>
                     </Table.Cell>
-
                     <Table.Cell>{m.food}</Table.Cell>
                     <Table.Cell align="center">{m.quantity}</Table.Cell>
-                    <Table.Cell align="center">
-                      🔥 <b>{m.calories}</b>
-                    </Table.Cell>
-
+                    <Table.Cell align="center">🔥 {m.calories}</Table.Cell>
                     <Table.Cell align="right">
-                      <Flex gap="2" justify="end">
+                      <Flex gap="8px" justify="end">
                         <Button
                           size="1"
                           variant="ghost"
@@ -252,6 +221,7 @@ const CaloriesScreen: React.FC = () => {
                         >
                           <Edit size={16} />
                         </Button>
+
                         <Button
                           size="1"
                           variant="ghost"
@@ -269,29 +239,22 @@ const CaloriesScreen: React.FC = () => {
           </Table.Root>
         </Card>
 
-        {/* TOTAL + WARNING */}
-        <Flex direction="column" align="end" mt="24px" gap="6px">
+        {/* TOTAL */}
+        <Flex direction="column" align="end" mt="20px">
           <Badge
             size="3"
             style={{
-              backgroundColor:
+              background:
                 totalCalories > DAILY_CAL_LIMIT ? "#fee2e2" : "#dcfce7",
               color: totalCalories > DAILY_CAL_LIMIT ? "#b91c1c" : "#166534",
-              padding: "8px 16px",
             }}
           >
-            Total: {totalCalories} / {DAILY_CAL_LIMIT} kcal
+            {totalCalories} / {DAILY_CAL_LIMIT} kcal
           </Badge>
-
-          {totalCalories > DAILY_CAL_LIMIT && (
-            <Text size="2" style={{ color: "#b91c1c", fontWeight: 600 }}>
-              ⚠️ You are over your daily calorie limit
-            </Text>
-          )}
         </Flex>
       </Box>
 
-      {/* WEEKLY BOTTOM SHEET */}
+      {/* WEEKLY CHART */}
       {chartOpen && (
         <Box
           style={{
@@ -310,42 +273,38 @@ const CaloriesScreen: React.FC = () => {
               padding: 20,
             }}
           >
-            <Flex justify="between" align="center" mb="3">
-              <Heading size="4">Weekly Calories — {user}</Heading>
-              <Button variant="ghost" onClick={() => setChartOpen(false)}>
-                Close
-              </Button>
-            </Flex>
+            <Heading size="4" mb="3">
+              Weekly Calories — {user}
+            </Heading>
 
             <Box style={{ height: 260 }}>
               <ResponsiveContainer>
-                <BarChart data={weeklyData} style={{ outline: "none" }}>
-                  <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
+                <BarChart data={weeklyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="label" />
                   <YAxis />
                   <Tooltip cursor={false} />
-
                   <ReferenceLine
                     y={DAILY_CAL_LIMIT}
                     stroke="#ef4444"
                     strokeDasharray="6 6"
-                    label={{
-                      value: "2000 kcal",
-                      position: "top",
-                      fill: "#ef4444",
-                    }}
                   />
-
                   <Bar
                     dataKey="calories"
                     fill={theme.main}
                     radius={[8, 8, 0, 0]}
                     stroke="none"
-                    isAnimationActive
                   />
                 </BarChart>
               </ResponsiveContainer>
             </Box>
+
+            <Button
+              onClick={() => setChartOpen(false)}
+              style={{ marginTop: 12 }}
+            >
+              Close
+            </Button>
           </Card>
         </Box>
       )}

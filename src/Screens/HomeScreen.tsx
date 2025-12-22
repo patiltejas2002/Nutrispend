@@ -1,7 +1,20 @@
 import React, { useState } from "react";
-import { Box, Flex, Card, Text, Heading, Button } from "@radix-ui/themes";
+import {
+  Box,
+  Flex,
+  Card,
+  Text,
+  Heading,
+  Button,
+  Dialog,
+} from "@radix-ui/themes";
 import { useNavigate } from "react-router-dom";
-import { Flame, WalletCards, Receipt, LayoutDashboard } from "lucide-react";
+import {
+  Flame,
+  WalletCards,
+  Receipt,
+  LayoutDashboard,
+} from "lucide-react";
 
 // Swiper
 import "swiper/css";
@@ -34,6 +47,7 @@ const HomeScreen: React.FC = () => {
   };
 
   const [selectedUser, setSelectedUser] = useState<User>(getInitialUser);
+  const [openDrinkWarning, setOpenDrinkWarning] = useState(false);
 
   const handleUserChange = (user: User) => {
     setSelectedUser(user);
@@ -42,8 +56,16 @@ const HomeScreen: React.FC = () => {
 
   const theme =
     selectedUser === "Tejas"
-      ? { main: "#4A90E2", soft: "#97d6ffff", shadow: "rgba(49, 136, 235, 0.3)" }
-      : { main: "#ec4899", soft: "#ffaadaff", shadow: "rgba(236, 59, 148, 0.3)" };
+      ? {
+          main: "#4A90E2",
+          soft: "#97d6ffff",
+          shadow: "rgba(49,136,235,0.3)",
+        }
+      : {
+          main: "#ec4899",
+          soft: "#ffaadaff",
+          shadow: "rgba(236,59,148,0.3)",
+        };
 
   const bg = `radial-gradient(circle at top left,${theme.soft},#f7efff 40%,#edf7ff 100%)`;
 
@@ -75,7 +97,6 @@ const HomeScreen: React.FC = () => {
           zIndex: 50,
         }}
       >
-        {/* LEFT */}
         <Flex align="center" gap="10px">
           <img
             src={Logo}
@@ -92,7 +113,6 @@ const HomeScreen: React.FC = () => {
           </Text>
         </Flex>
 
-        {/* RIGHT → DASHBOARD BUTTON */}
         <Button
           onClick={() => navigate("/dashboard")}
           style={{
@@ -132,11 +152,14 @@ const HomeScreen: React.FC = () => {
                   maxWidth: 140,
                   borderRadius: 999,
                   height: 44,
-                  background: selectedUser === u ? theme.main : "#e5e7eb",
+                  background:
+                    selectedUser === u ? theme.main : "#e5e7eb",
                   color: selectedUser === u ? "white" : "#333",
                   fontWeight: 700,
                   boxShadow:
-                    selectedUser === u ? `0 6px 16px ${theme.shadow}` : "none",
+                    selectedUser === u
+                      ? `0 6px 16px ${theme.shadow}`
+                      : "none",
                 }}
               >
                 {u}
@@ -159,14 +182,18 @@ const HomeScreen: React.FC = () => {
                 <img
                   src={img}
                   alt="Banner"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
                 />
               </SwiperSlide>
             ))}
           </Swiper>
         </Box>
 
-        {/* PRIMARY ACTIONS */}
+        {/* ACTION BUTTONS */}
         <Flex direction="column" gap="10px" mb="20px">
           <Button
             onClick={() => navigate("/calories")}
@@ -185,7 +212,6 @@ const HomeScreen: React.FC = () => {
             onClick={() => navigate("/wallet")}
             style={{
               height: 45,
-
               background: "#b80404ff",
               color: "white",
               borderRadius: 14,
@@ -207,13 +233,14 @@ const HomeScreen: React.FC = () => {
             <Receipt size={18} style={{ marginRight: 8 }} />
             Expenses
           </Button>
+
+          {/* DRINKS → WARNING */}
           <Button
-            onClick={() => navigate("/drinks")}
+            onClick={() => setOpenDrinkWarning(true)}
             style={{
               height: 45,
               background:
-                "linear-gradient(90deg, #4978fcff, #ff3939ff, rgba(54, 248, 132, 1))",
-
+                "linear-gradient(90deg,#4978fc,#ff3939,#36f884)",
               color: "white",
               borderRadius: 14,
             }}
@@ -256,6 +283,50 @@ const HomeScreen: React.FC = () => {
           ))}
         </Card>
       </Box>
+
+      {/* DRINK WARNING DIALOG */}
+      <Dialog.Root
+        open={openDrinkWarning}
+        onOpenChange={setOpenDrinkWarning}
+      >
+        <Dialog.Content style={{ borderRadius: 20, padding: 24 }}>
+          <Heading size="4" mb="2">
+            ⚠️ Health Warning
+          </Heading>
+
+          <Text size="2" color="gray" mb="4">
+            Drinking alcohol and smoking are injurious to health.
+          </Text>
+
+          <Text size="2" mb="5">
+            Do you wish to continue?
+          </Text>
+
+          <Flex gap="10px" justify="end">
+            <Button
+              variant="soft"
+              onClick={() => setOpenDrinkWarning(false)}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              onClick={() => {
+                setOpenDrinkWarning(false);
+                navigate("/drinks");
+              }}
+              style={{
+                background: theme.main,
+                color: "white",
+                borderRadius: 999,
+                fontWeight: 600,
+              }}
+            >
+              I Understand
+            </Button>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
     </Box>
   );
 };
