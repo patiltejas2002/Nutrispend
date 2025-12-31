@@ -13,11 +13,10 @@ import {
 import { ArrowLeft, Trash2, CheckCircle, Edit } from "lucide-react";
 
 type Person = "Tejas" | "Nikita";
-type EntryType = "EXPENSE" | "LOAN";
 
 type Entry = {
   id: string;
-  type: EntryType;
+  type: "LOAN";
   title: string;
   description?: string;
   amount: number;
@@ -38,7 +37,7 @@ const saveEntries = (arr: Entry[]) =>
 const ExpensesScreen: React.FC = () => {
   const navigate = useNavigate();
 
-  // ✅ FIX: READ DEFAULT USER FROM HOME
+  // 🔹 ACTIVE USER
   const [user, setUser] = useState<Person>(
     (localStorage.getItem("activeUser") as Person) || "Tejas"
   );
@@ -63,13 +62,23 @@ const ExpensesScreen: React.FC = () => {
     setItems(loadEntries());
   }, []);
 
-  const relatedItems = useMemo(
-    () => items.filter((i) => i.paidBy === user || i.otherPerson === user),
+  // 🔹 ONLY LOANS RELATED TO USER
+  const loans = useMemo(
+    () =>
+      items.filter(
+        (i) =>
+          i.type === "LOAN" &&
+          (i.paidBy === user || i.otherPerson === user)
+      ),
     [items, user]
   );
 
-  const expenses = relatedItems.filter((i) => i.type === "EXPENSE");
-  const loans = relatedItems.filter((i) => i.type === "LOAN");
+  // 🔹 TOTAL PENDING LOANS
+  const totalPendingLoan = useMemo(() => {
+    return loans
+      .filter((l) => !l.settled)
+      .reduce((sum, l) => sum + l.amount, 0);
+  }, [loans]);
 
   const toggleSettled = (id: string) => {
     const updated = items.map((i) =>
@@ -80,7 +89,7 @@ const ExpensesScreen: React.FC = () => {
   };
 
   const deleteEntry = (id: string) => {
-    if (!window.confirm("Delete this entry?")) return;
+    if (!window.confirm("Delete this loan?")) return;
     const updated = items.filter((i) => i.id !== id);
     setItems(updated);
     saveEntries(updated);
@@ -109,10 +118,10 @@ const ExpensesScreen: React.FC = () => {
             >
               <ArrowLeft />
             </Button>
-            <Heading size="6">Expenses & Loans</Heading>
+            <Heading size="6">Loans</Heading>
           </Flex>
 
-          {/* ACTION BUTTONS */}
+          {/* 🔹 ACTION BUTTONS */}
           <Flex gap="10px">
             <Button
               variant="outline"
@@ -137,7 +146,7 @@ const ExpensesScreen: React.FC = () => {
                 fontWeight: 600,
               }}
             >
-              Add
+              Add Loan
             </Button>
           </Flex>
         </Flex>
@@ -149,7 +158,7 @@ const ExpensesScreen: React.FC = () => {
               key={p}
               onClick={() => {
                 setUser(p);
-                localStorage.setItem("activeUser", p); // ✅ SYNC WITH HOME
+                localStorage.setItem("activeUser", p);
               }}
               style={{
                 flex: 1,
@@ -164,112 +173,25 @@ const ExpensesScreen: React.FC = () => {
           ))}
         </Flex>
 
-        {/* ================= EXPENSES ================= */}
-        <Heading size="5" mb="3" style={{ color: theme.text }}>
-          Expenses
-        </Heading>
+        {/* TOTAL LOAN CARD */}
+        <Flex
+          justify="between"
+          align="center"
+          mb="16px"
+          style={{
+            background: "#f8fafc",
+            padding: "14px 18px",
+            borderRadius: 14,
+            border: "1px solid #e5e7eb",
+          }}
+        >
+          <Text weight="bold">Total Pending Loan</Text>
+          <Text weight="bold" size="4" style={{ color: theme.main }}>
+            ₹ {totalPendingLoan.toFixed(2)}
+          </Text>
+        </Flex>
 
-        <Card style={{ padding: 0, borderRadius: 20, marginBottom: 36 }}>
-          <Table.Root>
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeaderCell>Details</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell>Who</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell align="center">
-                  Amount
-                </Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell align="center">
-                  Status
-                </Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell align="right">
-                  Action
-                </Table.ColumnHeaderCell>
-              </Table.Row>
-            </Table.Header>
-
-            <Table.Body>
-              {expenses.length === 0 ? (
-                <Table.Row>
-                  <Table.Cell colSpan={5} align="center">
-                    <Text color="gray">No expenses</Text>
-                  </Table.Cell>
-                </Table.Row>
-              ) : (
-                expenses.map((item) => (
-                  <Table.Row key={item.id}>
-                    <Table.Cell>
-                      <Text weight="bold">{item.title}</Text>
-                      <Text size="1" color="gray">
-                        {item.date}
-                      </Text>
-                    </Table.Cell>
-
-                    <Table.Cell>
-                      {item.paidBy} → {item.otherPerson}
-                    </Table.Cell>
-
-                    <Table.Cell align="center">
-                      ₹ {(item.amount / 2).toFixed(2)}
-                      <Text size="1" color="gray">
-                        Half share
-                      </Text>
-                    </Table.Cell>
-
-                    <Table.Cell align="center">
-                      <Badge
-                        style={{
-                          backgroundColor: item.settled
-                            ? "#dcfce7"
-                            : "#fef3c7",
-                          color: item.settled
-                            ? "#166534"
-                            : "#92400e",
-                        }}
-                      >
-                        {item.settled ? "Paid" : "Pending"}
-                      </Badge>
-                    </Table.Cell>
-
-                    <Table.Cell align="right">
-                      <Flex gap="3" justify="end">
-                        <Button
-                          size="1"
-                          variant="ghost"
-                          onClick={() => toggleSettled(item.id)}
-                          style={{ color: "#16a34a" }}
-                        >
-                          <CheckCircle size={16} />
-                        </Button>
-                        <Button
-                          size="1"
-                          variant="ghost"
-                          onClick={() => editEntry(item.id)}
-                          style={{ color: theme.main }}
-                        >
-                          <Edit size={16} />
-                        </Button>
-                        <Button
-                          size="1"
-                          variant="ghost"
-                          onClick={() => deleteEntry(item.id)}
-                          style={{ color: "#dc2626" }}
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      </Flex>
-                    </Table.Cell>
-                  </Table.Row>
-                ))
-              )}
-            </Table.Body>
-          </Table.Root>
-        </Card>
-
-        {/* ================= LOANS ================= */}
-        <Heading size="5" mb="3" style={{ color: theme.text }}>
-          Loans
-        </Heading>
-
+        {/* LOANS TABLE */}
         <Card style={{ padding: 0, borderRadius: 20 }}>
           <Table.Root>
             <Table.Header>
@@ -306,14 +228,11 @@ const ExpensesScreen: React.FC = () => {
                     </Table.Cell>
 
                     <Table.Cell>
-                      {item.paidBy} → {item.otherPerson}
+                      {item.otherPerson} owes {item.paidBy}
                     </Table.Cell>
 
                     <Table.Cell align="center">
                       ₹ {item.amount.toFixed(2)}
-                      <Text size="1" color="gray">
-                        Full amount
-                      </Text>
                     </Table.Cell>
 
                     <Table.Cell align="center">

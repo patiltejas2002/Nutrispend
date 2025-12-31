@@ -10,18 +10,16 @@ import {
   TextArea,
 } from "@radix-ui/themes";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Calendar } from "lucide-react";
+import { ArrowLeft, Calendar, ArrowRightLeft } from "lucide-react";
 
-type EntryType = "EXPENSE" | "LOAN";
 type Person = "Tejas" | "Nikita";
 
 type Entry = {
   id: string;
-  type: EntryType;
+  type: "LOAN";
   title: string;
   description?: string;
   amount: number;
-  splitAmount: number;
   date: string;
   paidBy: Person;
   otherPerson: Person;
@@ -42,13 +40,12 @@ const AddExpense: React.FC = () => {
   const editId = searchParams.get("edit");
   const isEditing = !!editId;
 
-  const [type, setType] = useState<EntryType>("EXPENSE");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayISO());
 
-  // ✅ FIX: READ DEFAULT USER FROM HOME
+  // Who is giving the loan
   const [paidBy, setPaidBy] = useState<Person>(
     (localStorage.getItem("activeUser") as Person) || "Tejas"
   );
@@ -56,17 +53,12 @@ const AddExpense: React.FC = () => {
   const otherPerson: Person =
     paidBy === "Tejas" ? "Nikita" : "Tejas";
 
-  // 🎨 Theme
   const theme =
     paidBy === "Tejas"
       ? { main: "#4A90E2", soft: "#e0f2fe" }
       : { main: "#ec4899", soft: "#fce7f3" };
 
   const numericAmount = Number(amount) || 0;
-  const splitAmount =
-    type === "EXPENSE"
-      ? +(numericAmount / 2).toFixed(2)
-      : numericAmount;
 
   /* ================= EDIT PREFILL ================= */
   useEffect(() => {
@@ -79,7 +71,6 @@ const AddExpense: React.FC = () => {
     const entry = data.find((e) => e.id === editId);
     if (!entry) return;
 
-    setType(entry.type);
     setTitle(entry.title);
     setDescription(entry.description || "");
     setAmount(entry.amount.toString());
@@ -100,11 +91,9 @@ const AddExpense: React.FC = () => {
         e.id === editId
           ? {
               ...e,
-              type,
               title: title.trim(),
               description: description.trim() || undefined,
               amount: numericAmount,
-              splitAmount,
               date,
               paidBy,
               otherPerson,
@@ -116,11 +105,10 @@ const AddExpense: React.FC = () => {
     } else {
       const newEntry: Entry = {
         id: uid(),
-        type,
+        type: "LOAN",
         title: title.trim(),
         description: description.trim() || undefined,
         amount: numericAmount,
-        splitAmount,
         date,
         paidBy,
         otherPerson,
@@ -131,9 +119,7 @@ const AddExpense: React.FC = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
 
-    // ✅ KEEP USER CONSISTENT
     localStorage.setItem("activeUser", paidBy);
-
     navigate("/expenses");
   };
 
@@ -156,52 +142,28 @@ const AddExpense: React.FC = () => {
             <ArrowLeft />
           </Button>
           <Heading size="6">
-            {isEditing
-              ? "Edit Entry"
-              : `Add ${type === "EXPENSE" ? "Expense" : "Loan"}`}
+            {isEditing ? "Edit Loan" : "Add Loan"}
           </Heading>
         </Flex>
 
-        {/* TYPE */}
+        {/* WHO IS GIVING LOAN */}
         <Text weight="bold" mb="8px">
-          What are you adding?
+          Who is giving the loan?
         </Text>
-        <Flex gap="10px" mb="22px">
-          {(["EXPENSE", "LOAN"] as EntryType[]).map((t) => (
-            <Button
-              key={t}
-              onClick={() => setType(t)}
-              style={{
-                flex: 1,
-                borderRadius: 999,
-                backgroundColor: type === t ? theme.main : "#e5e7eb",
-                color: type === t ? "white" : "#333",
-                fontWeight: 600,
-              }}
-            >
-              {t === "EXPENSE" ? "Expense" : "Loan"}
-            </Button>
-          ))}
-        </Flex>
-
-        {/* PAID BY */}
-        <Text weight="bold" mb="8px">
-          Who paid?
-        </Text>
-        <Flex gap="10px" mb="22px">
+        <Flex gap="10px" mb="18px">
           {(["Tejas", "Nikita"] as Person[]).map((p) => (
             <Button
               key={p}
               onClick={() => {
                 setPaidBy(p);
-                localStorage.setItem("activeUser", p); // ✅ sync
+                localStorage.setItem("activeUser", p);
               }}
               style={{
                 flex: 1,
                 borderRadius: 999,
                 backgroundColor: paidBy === p ? theme.main : "#e5e7eb",
                 color: paidBy === p ? "white" : "#333",
-                fontWeight: 600,
+                fontWeight: 700,
               }}
             >
               {p}
@@ -209,23 +171,33 @@ const AddExpense: React.FC = () => {
           ))}
         </Flex>
 
-        {/* INFO */}
+        {/* 🔥 LOAN DIRECTION CARD */}
         <Card
           style={{
-            marginBottom: 20,
-            padding: 16,
-            borderRadius: 16,
-            background: "#f8fafc",
+            marginBottom: 22,
+            padding: 18,
+            borderRadius: 18,
+            background: "#fff7ed",
+            border: "1px solid #fed7aa",
           }}
         >
-          <Text size="2">
-            <b>{otherPerson}</b> owes <b>{paidBy}</b> ₹{splitAmount}
-            {type === "EXPENSE" ? " (half share)" : ""}
+          <Flex align="center" justify="center" gap="10px">
+            <Text weight="bold" size="3">
+              {otherPerson}
+            </Text>
+            <ArrowRightLeft />
+            <Text weight="bold" size="3">
+              {paidBy}
+            </Text>
+          </Flex>
+
+          <Text align="center" mt="8px" size="2">
+            {otherPerson} owes {paidBy} ₹{numericAmount || 0}
           </Text>
         </Card>
 
         {/* TITLE */}
-        <Text weight="bold" mb="6px">Title</Text>
+        <Text weight="bold" mb="6px">Reason / Title</Text>
         <TextField.Root
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -233,7 +205,7 @@ const AddExpense: React.FC = () => {
         />
 
         {/* DESCRIPTION */}
-        <Text weight="bold" mb="6px">Description</Text>
+        <Text weight="bold" mb="6px">Description (optional)</Text>
         <TextArea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -242,7 +214,7 @@ const AddExpense: React.FC = () => {
         />
 
         {/* AMOUNT */}
-        <Text weight="bold" mb="6px">Amount (₹)</Text>
+        <Text weight="bold" mb="6px">Loan Amount (₹)</Text>
         <TextField.Root
           type="number"
           value={amount}
@@ -280,7 +252,7 @@ const AddExpense: React.FC = () => {
             fontSize: 16,
           }}
         >
-          {isEditing ? "Update" : "Save"}
+          {isEditing ? "Update Loan" : "Save Loan"}
         </Button>
       </Box>
     </Box>
